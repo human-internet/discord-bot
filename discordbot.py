@@ -25,11 +25,26 @@ async def on_ready():
 # Command -- /hello-world
 @bot.command('hello-world')
 async def helloWorld(ctx):
-    message = ctx.message
+    sender = ctx.message.author
 
     # only look at messages that are not sent by this bot
-    if message.author != bot.user:
-        await message.channel.send('hello world')
+    if sender != bot.user:
+        # grabs the id that represents the verified role
+        roles = discord.utils.get(ctx.guild.roles, name='Verified')
+
+        # add the role to the user if the role exists
+        if roles:
+            await sender.add_roles(roles)
+
+
+# used to remove the verified role for testing
+@bot.command('remove-verified')
+async def removeVerify(ctx):
+    sender = ctx.message.author
+
+    if sender != bot.user:
+        roles = discord.utils.get(ctx.guild.roles, name='Verified')
+        await sender.remove_roles(roles)
 
 
 bot.run(TOKEN);
