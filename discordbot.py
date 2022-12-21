@@ -2,6 +2,7 @@ import discord
 import asyncio
 from discord.ext import commands
 from discord import Webhook
+import aiohttp
 import requests
 import pyshorteners as ps
 
@@ -35,10 +36,31 @@ async def helloWorld(ctx):
         # grabs the id that represents the Verified role
         roles = discord.utils.get(ctx.guild.roles, name='Verified')
 
+
         # add the role to the user if the role exists
         if roles:
             await sender.add_roles(roles)
             await message.channel.send('Added the role')
+
+
+# Command -- /setup
+@bot.command('setup')
+async def setup(ctx):
+    message = ctx.message
+    sender = message.author
+
+    # only look at messages that are not sent by this bot
+    if sender != bot.user:
+
+        # only create the role if it does not exist
+        roles = discord.utils.get(ctx.guild.roles, name='Verified')
+        if not roles:
+            await ctx.guild.create_role(name='Verified')
+
+        # only create the channel if it does not exist
+        channels = discord.utils.get(ctx.guild.channels, name='get-verified')
+        if not channels:
+            await ctx.guild.create_text_channel('get-verified')
 
 
 # used to remove the verified role for testing
@@ -63,6 +85,25 @@ async def redirect(ctx):
     #   a) have tried guild id, bot id
     #   b) haven't been able to find any id that starts with SERVER
 
+
+    await message.channel.send('http://localhost:3010/')
+    response = requests.get('http://localhost:3010/data')
+
+    sender = message.author
+
+    # if the user was verified
+    if sender != bot.user and response.json()['verify']:
+        # grabs the id that represents the Verified role
+        roles = discord.utils.get(ctx.guild.roles, name='Verified')
+
+
+        # add the role to the user if the role exists
+        if roles:
+            await sender.add_roles(roles)
+            await message.channel.send('Added the role')
+    return
+
+
     CLIENT_ID = 'SERVER_4R3QUQRNQOSK9TOTWHD7Q2'
     secret = 'g_zsgbW00owFeQHKmfyXP7p6_iUJ9U797_iThf19AsP-jeZu7DWeGqJ.V3aLRRzm'
     headers = {
@@ -70,7 +111,6 @@ async def redirect(ctx):
         'client-secret': secret,
         'Content-Type' : 'application/json'
     }
-
     # gets the humanID url that verifies the user and sends a shortened version to the user
     response = requests.post('https://core.human-id.org/v0.0.3/server/users/web-login', headers=headers)
     return_url = response.json()['data']['webLoginUrl']
@@ -82,14 +122,6 @@ async def redirect(ctx):
     headers = {'client-id': CLIENT_ID, 'client-secret': cs , 'Content-Type' : 'application/json' }
     response = requests.post('https://s-api.human-id.org/v1', headers=headers)
     return
-
-    # Unsure what the post request is doing (maybe storing the user that is logging in?) 
-    """
-    CLIENT_ID = '982430908281933865'
-    cs = '6fJVAg9lYw9MtrLYF0DZM-67-W_aDC6A'
-    headers = {'client-id': CLIENT_ID, 'client-secret': cs , 'Content-Type' : 'application/json' }
-    response = requests.post('https://s-api.human-id.org/v1', headers=headers)
-    """
 
     # Unsure what the point of this code is supposed to do
     # It seems like it simply uses a discord webhook to send a message, but why not just send it manually
