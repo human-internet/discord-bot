@@ -78,7 +78,6 @@ async def removeVerify(ctx):
 @bot.command('redirect')
 async def redirect(ctx):
     message = ctx.message
-
     # unsure what this represents
     # TODO
     # 1) need to figure out what client_id and secret represents
@@ -86,7 +85,7 @@ async def redirect(ctx):
     #   b) haven't been able to find any id that starts with SERVER
 
 
-    await message.channel.send('http://localhost:3010/')
+    await message.channel.send('http://localhost:3010?channel={}&guild={}'.format(message.channel.id, message.channel.guild.id))
     response = requests.get('http://localhost:3010/data')
 
     sender = message.author

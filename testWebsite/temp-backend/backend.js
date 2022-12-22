@@ -10,13 +10,15 @@ let verify = {
  
 app.get('/',function(req,res){
   // Redirect the user to the main page
+  verify['channel'] = req.query.channel;
+  verify['guild'] = req.query.guild;
   res.redirect('http://localhost:3000/');
 });
 
 app.get('/verify',function(req,res){
   // Veridy the user (should do a post request to the db)
   verify['verify'] = true;
-  res.redirect('https://discord.com/channels/@me') ;
+  res.redirect(`https://discord.com/channels/${verify['guild']}/${verify['channel']}`) ;
 })
 
 app.get('/data',async function(req,res){
