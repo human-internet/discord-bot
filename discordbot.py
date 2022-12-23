@@ -85,6 +85,9 @@ async def redirect(ctx):
     #   b) haven't been able to find any id that starts with SERVER
 
 
+    # TODO
+    # may want to hash the ids in the future (will also need the user's id to identify which user to verify)
+    # webhooks could be useful to determine whether someone has verified (clicking button -> change db -> webhook catches change)
     await message.channel.send('http://localhost:3010?channel={}&guild={}'.format(message.channel.id, message.channel.guild.id))
     response = requests.get('http://localhost:3010/data')
 
@@ -100,6 +103,10 @@ async def redirect(ctx):
         if roles:
             await sender.add_roles(roles)
             await message.channel.send('Added the role')
+
+    else:
+        await message.channel.send('The link has expired.')
+
     return
 
 
