@@ -6,6 +6,7 @@ import aiohttp
 import requests
 import pyshorteners as ps
 
+
 # Will need to move this somewhere other than a source file in the future
 TOKEN = 'MTA1MjczNjg1NDM2Mjk0NzcwNA.GGb4vM.UzAaoxUGySjvAVPLarupHTePKUyhI8ChOjYzvg'
 
@@ -25,14 +26,39 @@ async def on_ready():
     print("Logged in as {0.user}".format(bot))
 
 
+# cathes all slash commands (currently only one and should end with only 1 ie /verify)
+# when a user does /verify, they'll be sent an ephemeral message with a link to humanID
+@bot.event
+async def on_interaction(interaction):
+    print(dir(interaction))
+    await interaction.response.send_message('test', ephemeral=True)
+
+
+# TODO has not been tested
+# Goal is to automatically create the verified role and get-verified channel when
+# joining a server
+@bot.event
+async def on_guild_join(guild):
+    roles = discord.utils.get(guild.roles, name='Verified')
+    if not roles:
+        await guild.create_role(name='Verified')
+
+    # only create the channel if it does not exist
+    channels = discord.utils.get(guild.channels, name='get-verified')
+    if not channels:
+        await guild.create_text_channel('get-verified')
+
+
+
 # Command -- /hello-world
 @bot.command('hello-world')
 async def helloWorld(ctx):
     message = ctx.message
     sender = message.author
+    channels = discord.utils.get(ctx.guild.channels, name='get-verified')
 
-    # only look at messages that are not sent by this bot
-    if sender != bot.user:
+    # only look at messages that are not sent by this bot and that are sent in the get-verified channel
+    if sender != bot.user and channels == message.channel:
         # grabs the id that represents the Verified role
         roles = discord.utils.get(ctx.guild.roles, name='Verified')
 
@@ -51,7 +77,6 @@ async def setup(ctx):
 
     # only look at messages that are not sent by this bot
     if sender != bot.user:
-
         # only create the role if it does not exist
         roles = discord.utils.get(ctx.guild.roles, name='Verified')
         if not roles:
@@ -161,6 +186,29 @@ async def redirect(ctx):
     """
     await msg.channel.send(f"https://bit.ly/3A5b5bW")
     """
+
+
+@bot.command('eph')
+async def eph(ctx):
+    message = await ctx.message.channel.send('React to Verify')
+
+    roles = discord.utils.get(ctx.guild.emojis, name='test')
+    await message.add_reaction(roles)
+
+    
+
+"""
+print(discord.app_commands.Command.callback)
+@discord.app_commands.command(name='blep')
+@discord.app_commands.describe(animal='fruits to choose from')
+@discord.app_commands.choices(animal=[
+    discord.app_commands.Choice(name='Dog', value='animal_dog'),
+    discord.app_commands.Choice(name='Cat', value='animal_cat'),
+    discord.app_commands.Choice(name='Penguin', value='animal_penguin'),
+])
+async def blep(interaction: discord.Interaction, animal: discord.app_commands.Choice[str]):
+    print(interaction)
+"""
 
 
 bot.run(TOKEN);
