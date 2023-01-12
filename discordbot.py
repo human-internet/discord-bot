@@ -1,7 +1,11 @@
 import discord
+import time
+import datetime
+from discord import app_commands
 import asyncio
 from discord.ext import commands
 from discord import Webhook
+import pyshorteners as ps
 import aiohttp
 import requests
 import pyshorteners as ps
@@ -20,19 +24,13 @@ bot = commands.Bot(
         intents=intents
     )
 
+client = discord.Client(intents=intents)
+tree = app_commands.CommandTree(client)
+
 # ensures the bot is working/connected
 @bot.event
 async def on_ready():
     print("Logged in as {0.user}".format(bot))
-
-
-# cathes all slash commands (currently only one and should end with only 1 ie /verify)
-# when a user does /verify, they'll be sent an ephemeral message with a link to humanID
-@bot.event
-async def on_interaction(interaction):
-    print(dir(interaction))
-    await interaction.response.send_message('test', ephemeral=True)
-
 
 # TODO has not been tested
 # Goal is to automatically create the verified role and get-verified channel when
@@ -48,7 +46,60 @@ async def on_guild_join(guild):
     if not channels:
         await guild.create_text_channel('get-verified')
 
+    
+# Catches the /blep slash command
+@bot.tree.command(name='blep')
+@discord.app_commands.choices(animal=[
+    discord.app_commands.Choice(name='Dog', value='animal_dog'),
+    discord.app_commands.Choice(name='Cat', value='animal_cat'),
+    discord.app_commands.Choice(name='Penguin', value='animal_penguin'),
+])
+async def blep(interaction: discord.Interaction, animal: discord.app_commands.Choice[str]):
+    channels = discord.utils.get(interaction.guild.channels, name='logs')
+    if not channels:
+        await interaction.guild.create_text_channel('logs')
 
+    author = interaction.user
+    currentTime = time.gmtime(time.time())
+    embed = discord.Embed(
+        title='Verify Attempt',
+    )
+    embed.set_footer(
+        text=datetime.datetime(
+            year=currentTime.tm_year,
+            month=currentTime.tm_mon,
+            day=currentTime.tm_mday,
+            hour=currentTime.tm_hour,
+            minute=currentTime.tm_min,
+            second=currentTime.tm_sec
+        )
+    )
+    embed.set_author(
+        name=author.name,
+        url=author.display_avatar.url,
+        icon_url=author.display_avatar.url
+    )
+
+    await channels.send(embed=embed)
+    # await channels.send('User {} (id: {}) tried to verify.')
+    return
+
+    CLIENT_ID = 'SERVER_4R3QUQRNQOSK9TOTWHD7Q2'
+    cs = 'g_zsgbW00owFeQHKmfyXP7p6_iUJ9U797_iThf19AsP-jeZu7DWeGqJ.V3aLRRzm'
+    headers = {'client-id': 'SERVER_4R3QUQRNQOSK9TOTWHD7Q2', 'client-secret': cs , 'Content-Type' : 'application/json' }
+    response = requests.post('https://core.human-id.org/v0.0.3/server/users/web-login', headers=headers)
+    return_url = response.json()['data']['webLoginUrl']
+    short_url = ps.Shortener().tinyurl.short(return_url)
+    await interaction.response.send_message(
+            'Please use this link to verify: {}'.format(short_url),
+            ephemeral=True
+    )
+
+
+
+###################################
+# The commands below are currently only used for testing/development
+###################################
 
 # Command -- /hello-world
 @bot.command('hello-world')
@@ -69,23 +120,14 @@ async def helloWorld(ctx):
             await message.channel.send('Added the role')
 
 
-# Command -- /setup
-@bot.command('setup')
-async def setup(ctx):
+# Command -- /log
+@bot.command('log')
+async def log(ctx):
     message = ctx.message
-    sender = message.author
 
-    # only look at messages that are not sent by this bot
-    if sender != bot.user:
-        # only create the role if it does not exist
-        roles = discord.utils.get(ctx.guild.roles, name='Verified')
-        if not roles:
-            await ctx.guild.create_role(name='Verified')
-
-        # only create the channel if it does not exist
-        channels = discord.utils.get(ctx.guild.channels, name='get-verified')
-        if not channels:
-            await ctx.guild.create_text_channel('get-verified')
+    channels = discord.utils.get(message.guild.channels, name='Logs')
+    if not channels:
+        await message.guild.create_text_channel('Logs')
 
 
 # used to remove the verified role for testing
@@ -195,19 +237,28 @@ async def eph(ctx):
     roles = discord.utils.get(ctx.guild.emojis, name='test')
     await message.add_reaction(roles)
 
-    
 
 """
-print(discord.app_commands.Command.callback)
-@discord.app_commands.command(name='blep')
-@discord.app_commands.describe(animal='fruits to choose from')
-@discord.app_commands.choices(animal=[
-    discord.app_commands.Choice(name='Dog', value='animal_dog'),
-    discord.app_commands.Choice(name='Cat', value='animal_cat'),
-    discord.app_commands.Choice(name='Penguin', value='animal_penguin'),
-])
-async def blep(interaction: discord.Interaction, animal: discord.app_commands.Choice[str]):
-    print(interaction)
+# cathes all slash commands (currently only one and should end with only 1 ie /verify)
+# when a user does /verify, they'll be sent an ephemeral message with a link to humanID
+@bot.event
+async def on_interaction(interaction):
+    print(interaction.guild)
+    print(interaction.guild.id)
+    print(interaction.guild.shard_id)
+    print(bot.application_id)
+
+    return
+    CLIENT_ID = 'SERVER_4R3QUQRNQOSK9TOTWHD7Q2'
+    cs = 'g_zsgbW00owFeQHKmfyXP7p6_iUJ9U797_iThf19AsP-jeZu7DWeGqJ.V3aLRRzm'
+    headers = {'client-id': 'SERVER_4R3QUQRNQOSK9TOTWHD7Q2', 'client-secret': cs , 'Content-Type' : 'application/json' }
+    response = requests.post('https://core.human-id.org/v0.0.3/server/users/web-login', headers=headers)
+    return_url = response.json()['data']['webLoginUrl']
+    short_url = ps.Shortener().tinyurl.short(return_url)
+    await interaction.response.send_message(
+            'Please use this link to verify: {}'.format(short_url),
+            ephemeral=True
+    )
 """
 
 
