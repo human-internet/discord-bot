@@ -32,7 +32,6 @@ tree = app_commands.CommandTree(client)
 async def on_ready():
     print("Logged in as {0.user}".format(bot))
 
-# TODO has not been tested
 # Goal is to automatically create the verified role and get-verified channel when
 # joining a server
 @bot.event
@@ -61,8 +60,13 @@ async def blep(interaction: discord.Interaction, animal: discord.app_commands.Ch
 
     author = interaction.user
     currentTime = time.gmtime(time.time())
+
+    # TODO should create the embed after the verification link is set 
+    # need to wait until we get a response to determine the outcome
     embed = discord.Embed(
         title='Verify Attempt',
+        description='Status: {}'.format('Success'),
+        colour=discord.Colour.dark_gold(),
     )
     embed.set_footer(
         text=datetime.datetime(
@@ -96,6 +100,36 @@ async def blep(interaction: discord.Interaction, animal: discord.app_commands.Ch
     )
 
 
+# Sets up the configuration the admin would like
+# updates the verified role's name, get-verified channel name, and channel privacy settings
+# specify the settings via the parameters
+@bot.tree.command(name='setup')
+async def setup(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title='Verify Attempt',
+        description='Status: {}'.format('Success'),
+        colour=discord.Colour.dark_gold(),
+    )
+    embed.set_footer(
+        text=datetime.datetime(
+            year=currentTime.tm_year,
+            month=currentTime.tm_mon,
+            day=currentTime.tm_mday,
+            hour=currentTime.tm_hour,
+            minute=currentTime.tm_min,
+            second=currentTime.tm_sec
+        )
+    )
+    embed.set_author(
+        name=author.name,
+        url=author.display_avatar.url,
+        icon_url=author.display_avatar.url
+    )
+    discord.ui.Select(options)
+
+    await channels.send(embed=embed)
+
+
 
 ###################################
 # The commands below are currently only used for testing/development
@@ -112,7 +146,6 @@ async def helloWorld(ctx):
     if sender != bot.user and channels == message.channel:
         # grabs the id that represents the Verified role
         roles = discord.utils.get(ctx.guild.roles, name='Verified')
-
 
         # add the role to the user if the role exists
         if roles:
@@ -230,12 +263,79 @@ async def redirect(ctx):
     """
 
 
-@bot.command('eph')
-async def eph(ctx):
-    message = await ctx.message.channel.send('React to Verify')
 
-    roles = discord.utils.get(ctx.guild.emojis, name='test')
-    await message.add_reaction(roles)
+###################################
+# The two commands below are used together
+###################################
+async def handleInteraction(interaction):
+    print(interaction.data)
+    origMessage = interaction.message
+    chosen = interaction.data['values']
+    if interaction.data['component_type'] == 8:
+        # channel
+        verifiedRole = discord.utils.get(origMessage.guild.roles, name='Verified')
+        everyone = discord.utils.get(origMessage.guild.roles, name='@everyone')
+        for channelId in chosen:
+            # removes perms for non-verified users for the chosen channels
+            channel = await origMessage.guild.fetch_channel(chosen[0])
+            await channel.set_permissions(verifiedRole, read_messages=True, send_messages=True)
+            await channel.set_permissions(everyone, read_messages=False, send_messages=False)
+
+    else:
+        chosen = chosen[0]
+        if chosen == 'channel':
+            view = discord.ui.View()
+            view.add_item(discord.ui.ChannelSelect())
+            view.interaction_check = handleInteraction
+            await interaction.message.edit(embeds=[], view=view)
+
+        elif chosen == 'lock':
+            chooseChannel = discord.ui.ChannelSelect(
+                channel_types=[discord.ChannelType.text],
+                placeholder='temp TODO',
+                max_values=len(interaction.message.guild.text_channels)
+            )
+            view = discord.ui.View()
+            view.add_item(chooseChannel)
+            view.interaction_check = handleInteraction
+            await interaction.message.edit(embeds=[], view=view)
+
+        elif chosen == 'role':
+            view = discord.ui.View()
+            # interaction.data gives the value after selecting an option
+            d = discord.ui.Select(options=[discord.SelectOption(label='idk', value='idk'), discord.SelectOption(label='test', value='test')])
+            view.add_item(d)
+            view.interaction_check = handleInteraction
+            await interaction.message.edit(embeds=[], view=view)
+
+
+
+
+# Should be a slash command, which might be why "This Interaction Failed" error is there
+@bot.command('test')
+async def test(ctx):
+    message = ctx.message
+    embed = discord.Embed(
+        title='Verify Attempt',
+        description='Status: {}'.format('Success'),
+        colour=discord.Colour.dark_gold(),
+    )
+    view = discord.ui.View()
+    # interaction.data gives the value after selecting an option
+    d = discord.ui.Select(
+        options=[
+            discord.SelectOption(label='Channel', value='channel'),
+            discord.SelectOption(label='test', value='test'),
+            discord.SelectOption(label='Lock', value='lock'),
+        ]
+    )
+    view.add_item(d)
+
+
+    view.interaction_check = handleInteraction
+    await message.channel.send(embed=embed, view=view)
+
+
 
 
 """
@@ -243,10 +343,7 @@ async def eph(ctx):
 # when a user does /verify, they'll be sent an ephemeral message with a link to humanID
 @bot.event
 async def on_interaction(interaction):
-    print(interaction.guild)
-    print(interaction.guild.id)
-    print(interaction.guild.shard_id)
-    print(bot.application_id)
+    print(interaction)
 
     return
     CLIENT_ID = 'SERVER_4R3QUQRNQOSK9TOTWHD7Q2'
