@@ -141,6 +141,7 @@ async def helloWorld(ctx):
     message = ctx.message
     sender = message.author
     channels = discord.utils.get(ctx.guild.channels, name='get-verified')
+    print(message.guild.id)
 
     # only look at messages that are not sent by this bot and that are sent in the get-verified channel
     if sender != bot.user and channels == message.channel:
@@ -277,13 +278,20 @@ async def handleInteraction(interaction):
         everyone = discord.utils.get(origMessage.guild.roles, name='@everyone')
         for channelId in chosen:
             # removes perms for non-verified users for the chosen channels
-            channel = await origMessage.guild.fetch_channel(chosen[0])
+            channel = await origMessage.guild.fetch_channel(channelId)
             await channel.set_permissions(verifiedRole, read_messages=True, send_messages=True)
             await channel.set_permissions(everyone, read_messages=False, send_messages=False)
+
+        #await interaction.
+        await interaction.response.send_message(
+                'The specified channels have been locked for non-verified users.',
+                ephemeral=True
+        )
 
     else:
         chosen = chosen[0]
         if chosen == 'channel':
+            # Might want to rethink this because we would need a db to support it
             view = discord.ui.View()
             view.add_item(discord.ui.ChannelSelect())
             view.interaction_check = handleInteraction
@@ -299,15 +307,6 @@ async def handleInteraction(interaction):
             view.add_item(chooseChannel)
             view.interaction_check = handleInteraction
             await interaction.message.edit(embeds=[], view=view)
-
-        elif chosen == 'role':
-            view = discord.ui.View()
-            # interaction.data gives the value after selecting an option
-            d = discord.ui.Select(options=[discord.SelectOption(label='idk', value='idk'), discord.SelectOption(label='test', value='test')])
-            view.add_item(d)
-            view.interaction_check = handleInteraction
-            await interaction.message.edit(embeds=[], view=view)
-
 
 
 
