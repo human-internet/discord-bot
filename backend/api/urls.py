@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('', views.getRedirect, name='redirect'),
-    path('servers/', views.getServers, name='servers'),
+    path('start/', views.verifyAttempt, name='start'),
+    path('confirm/', views.closeVerify, name='confirmation'),
 ]
 

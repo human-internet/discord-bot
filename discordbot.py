@@ -19,7 +19,7 @@ intents = discord.Intents.all()
 
 # bot (subclass of the discord client class)
 bot = commands.Bot(
-        command_prefix='/',
+        command_prefix='!',
         case_insensitive=True,
         intents=intents
     )
@@ -44,6 +44,9 @@ async def on_guild_join(guild):
     channels = discord.utils.get(guild.channels, name='get-verified')
     if not channels:
         await guild.create_text_channel('get-verified')
+        
+    channels = discord.utils.get(guild.channels, name='get-verified')
+    await channels.send('Please use the ‘/verify’ command to start the humanID verification process.')
 
     
 # Catches the /blep slash command
@@ -59,6 +62,35 @@ async def blep(interaction: discord.Interaction, animal: discord.app_commands.Ch
         await interaction.guild.create_text_channel('logs')
 
     author = interaction.user
+
+    if interaction.channel.name != 'get-verified':
+        channels = discord.utils.get(interaction.guild.channels, name='get-verified').id
+        await interaction.response.send_message(
+                'This command can only be used in the <#{}> channel.'.format(str(channels)),
+                ephemeral=True
+        )
+        return
+
+
+    # Gets the link to humanID
+    response = requests.get(
+        'http://127.0.0.1:8000/api/?serverId=' +
+        str(interaction.guild.id) + str(author.id)
+    )
+
+    # Creates a db entry for the user to keep track of the link timeout
+    requests.put(
+        'http://127.0.0.1:8000/api/start/?userId=' + str(author.id)
+    )
+
+    # Send the humanID link that is unique to the current discord server
+    await interaction.response.send_message(
+            'Please use this link to verify: {}'.format(response.json()),
+            ephemeral=True
+    )
+
+    return
+
     currentTime = time.gmtime(time.time())
 
     # TODO should create the embed after the verification link is set 
@@ -85,19 +117,6 @@ async def blep(interaction: discord.Interaction, animal: discord.app_commands.Ch
     )
 
     await channels.send(embed=embed)
-    # await channels.send('User {} (id: {}) tried to verify.')
-    return
-
-    CLIENT_ID = 'SERVER_4R3QUQRNQOSK9TOTWHD7Q2'
-    cs = 'g_zsgbW00owFeQHKmfyXP7p6_iUJ9U797_iThf19AsP-jeZu7DWeGqJ.V3aLRRzm'
-    headers = {'client-id': 'SERVER_4R3QUQRNQOSK9TOTWHD7Q2', 'client-secret': cs , 'Content-Type' : 'application/json' }
-    response = requests.post('https://core.human-id.org/v0.0.3/server/users/web-login', headers=headers)
-    return_url = response.json()['data']['webLoginUrl']
-    short_url = ps.Shortener().tinyurl.short(return_url)
-    await interaction.response.send_message(
-            'Please use this link to verify: {}'.format(short_url),
-            ephemeral=True
-    )
 
 
 # Sets up the configuration the admin would like
@@ -105,35 +124,59 @@ async def blep(interaction: discord.Interaction, animal: discord.app_commands.Ch
 # specify the settings via the parameters
 @bot.tree.command(name='setup')
 async def setup(interaction: discord.Interaction):
+    if not interaction.user.guild_permissions.administrator:
+        await interaction.response.send_message(
+                'Access to the bot settings is only available to admins. Please contact an admin if you would like to change the settings.',
+                ephemeral=True
+        )
+
+    message = ctx.message
     embed = discord.Embed(
         title='Verify Attempt',
         description='Status: {}'.format('Success'),
         colour=discord.Colour.dark_gold(),
     )
-    embed.set_footer(
-        text=datetime.datetime(
-            year=currentTime.tm_year,
-            month=currentTime.tm_mon,
-            day=currentTime.tm_mday,
-            hour=currentTime.tm_hour,
-            minute=currentTime.tm_min,
-            second=currentTime.tm_sec
-        )
+    view = discord.ui.View()
+    # interaction.data gives the value after selecting an option
+    d = discord.ui.Select(
+        options=[
+            discord.SelectOption(label='Channel', value='channel'),
+            discord.SelectOption(label='test', value='test'),
+            discord.SelectOption(label='Lock', value='lock'),
+        ]
     )
-    embed.set_author(
-        name=author.name,
-        url=author.display_avatar.url,
-        icon_url=author.display_avatar.url
-    )
-    discord.ui.Select(options)
+    view.add_item(d)
 
-    await channels.send(embed=embed)
+    view.interaction_check = handleInteraction
+    await message.channel.send(embed=embed, view=view)
 
 
 
 ###################################
 # The commands below are currently only used for testing/development
 ###################################
+
+# Command -- /log
+@bot.command('log')
+async def log(ctx):
+    message = ctx.message
+    CLIENT_ID = 'SERVER_4R3QUQRNQOSK9TOTWHD7Q2'
+    cs = 'g_zsgbW00owFeQHKmfyXP7p6_iUJ9U797_iThf19AsP-jeZu7DWeGqJ.V3aLRRzm'
+    headers = {'client-id': CLIENT_ID, 'client-secret': cs , 'Content-Type' : 'application/json' }
+    response = requests.get('https://core.human-id.org/v0.0.3/server', headers=headers)
+    print(response)
+
+    if response.status_code == 201:
+        await message.channel.send('success')
+    return
+    link = requests.post('https://core.human-id.org/v0.0.3/server/users/web-login', headers=headers)
+    CLIENT_ID = 'SERVER_4R3QUQRNQOSK9TOTWHD7Q2'
+    cs = 'g_zsgbW00owFeQHKmfyXP7p6_iUJ9U797_iThf19AsP-jeZu7DWeGqJ.V3aLRRzm'
+    headers = {'client-id': 'SERVER_4R3QUQRNQOSK9TOTWHD7Q2', 'client-secret': cs , 'Content-Type' : 'application/json' }
+    response = requests.post('https://core.human-id.org/v0.0.3/server/users/web-login', headers=headers)
+    short_url = ps.Shortener().tinyurl.short(return_url)
+    await message.channel.send(short_url)
+
 
 # Command -- /hello-world
 @bot.command('hello-world')
@@ -144,7 +187,7 @@ async def helloWorld(ctx):
     print(message.guild.id)
 
     # only look at messages that are not sent by this bot and that are sent in the get-verified channel
-    if sender != bot.user and channels == message.channel:
+    if sender != bot.user:
         # grabs the id that represents the Verified role
         roles = discord.utils.get(ctx.guild.roles, name='Verified')
 
@@ -152,16 +195,6 @@ async def helloWorld(ctx):
         if roles:
             await sender.add_roles(roles)
             await message.channel.send('Added the role')
-
-
-# Command -- /log
-@bot.command('log')
-async def log(ctx):
-    message = ctx.message
-
-    channels = discord.utils.get(message.guild.channels, name='Logs')
-    if not channels:
-        await message.guild.create_text_channel('Logs')
 
 
 # used to remove the verified role for testing
@@ -329,7 +362,6 @@ async def test(ctx):
         ]
     )
     view.add_item(d)
-
 
     view.interaction_check = handleInteraction
     await message.channel.send(embed=embed, view=view)

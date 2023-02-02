@@ -10,10 +10,12 @@ class Server(models.Model):
     def __str__(self):
         return self.serverId
     
-
+# When the user does /verify, store user id and the time they tried to verify into the db
+# if the link is used, check if the time between the stored time and now is below a set time. If it is, remove entry from the table and verify user
+# Otherwise, send timeout message and remove their entry in the db
 class Person(models.Model):
     userId = models.TextField(null=False)
-    name = models.TextField(null=False)
+    created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.userId
