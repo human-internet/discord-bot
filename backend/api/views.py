@@ -66,13 +66,28 @@ def verifyAttempt(request):
         # Create an entry representing the user trying to verify
         Person.objects.create(
             userId = userQuery,
-            created = timezone.now()
+            created = timezone.now(),
+            verified = False,
         )
 
         return Response('done')
 
+@api_view(['PUT', 'GET'])
+def finish(request):
+    userQuery = request.query_params.get('userId', None) # unhash here?
 
-@api_view(['DELETE'])
+    if not userQuery:
+        return HttpResponse(status=500)
+
+    user = Person.objects.get(userId=userQuery)
+    user.verified = True
+    user.save()
+
+    res = HttpResponse(status=200)
+    return res
+
+
+@api_view(['GET'])
 def closeVerify(request):
     userQuery = request.query_params.get('userId', None) # unhash here?
 
@@ -91,13 +106,16 @@ def closeVerify(request):
         .replace('Z', '')))
 
 
-    if created - datetime.now() < timedelta(minutes=30):
+    if created - datetime.now() < timedelta(minutes=30) and serializer['verified']:
         # If the attempt to verify was within a 30 minute time frame
+        user = Person.objects.get(userId=userQuery)
+        user.verified = False
+        user.save()
+
         status = 200
 
     else:
         # Create an entry representing the user trying to verify
         status = 504
 
-    user.delete()
     return HttpResponse(status=status)

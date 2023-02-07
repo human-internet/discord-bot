@@ -73,48 +73,44 @@ async def blep(interaction: discord.Interaction, animal: discord.app_commands.Ch
 
 
     # Gets the link to humanID
-    response, requestId = requests.get(
-        'http://127.0.0.1:8000/api/?serverId=' +
-        str(interaction.guild.id) + str(author.id)
-    )
+    if False:
+        response, requestId = requests.get(
+            'http://127.0.0.1:8000/api/?serverId=' +
+            str(interaction.guild.id) + str(author.id)
+        )
 
     # Creates a db entry for the user to keep track of the link timeout
     requests.put(
         'http://127.0.0.1:8000/api/start/?userId=' + str(author.id)
     )
 
+
     # Send the humanID link that is unique to the current discord server
     await interaction.response.send_message(
-        'Please use this link to verify: {}'.format(response.json()),
+        'Please use this link to verify: {}'.format('http://localhost:3000/?test=' + str(author.id) or response.json()),
         ephemeral=True
     )
 
     success = False
     outcome = 'Failed to verify your identity. Please try again.'
     for timeout in range(30):
-        # Maybe get request with requestId as a query param?
-        response, requestId = requests.get(
-            'web login api',
-            json={'requestId': requestId}
+        response = requests.get(
+            'http://127.0.0.1:8000/api/confirm/?userId={}'.format(str(author.id)),
         )
 
-        if response['status'] == 200:
+        if response.status_code == 200:
             success = True
             break
 
         time.sleep(1)
 
-
     if success:
-        roles = discord.utils.get(ctx.guild.roles, name='Verified')
+        roles = discord.utils.get(interaction.guild.roles, name='Verified')
         await author.add_roles(roles)
-        outcome = '“Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.” '
+        outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
 
 
-    await interaction.response.send_message(
-        outcome,
-        ephemeral=True
-    )
+    await interaction.edit_original_response(content=outcome)
 
 
     currentTime = time.gmtime(time.time())
