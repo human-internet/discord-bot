@@ -44,11 +44,11 @@ async def on_guild_join(guild):
     channels = discord.utils.get(guild.channels, name='get-verified')
     if not channels:
         await guild.create_text_channel('get-verified')
-        
+
     channels = discord.utils.get(guild.channels, name='get-verified')
     await channels.send('Please use the ‘/verify’ command to start the humanID verification process.')
 
-    
+
 # Catches the /blep slash command
 @bot.tree.command(name='blep')
 @discord.app_commands.choices(animal=[
@@ -66,14 +66,14 @@ async def blep(interaction: discord.Interaction, animal: discord.app_commands.Ch
     if interaction.channel.name != 'get-verified':
         channels = discord.utils.get(interaction.guild.channels, name='get-verified').id
         await interaction.response.send_message(
-                'This command can only be used in the <#{}> channel.'.format(str(channels)),
-                ephemeral=True
+            'This command can only be used in the <#{}> channel.'.format(str(channels)),
+            ephemeral=True
         )
         return
 
 
     # Gets the link to humanID
-    response = requests.get(
+    response, requestId = requests.get(
         'http://127.0.0.1:8000/api/?serverId=' +
         str(interaction.guild.id) + str(author.id)
     )
@@ -85,21 +85,46 @@ async def blep(interaction: discord.Interaction, animal: discord.app_commands.Ch
 
     # Send the humanID link that is unique to the current discord server
     await interaction.response.send_message(
-            'Please use this link to verify: {}'.format(response.json()),
-            ephemeral=True
+        'Please use this link to verify: {}'.format(response.json()),
+        ephemeral=True
     )
 
-    return
+    success = False
+    outcome = 'Failed to verify your identity. Please try again.'
+    for timeout in range(30):
+        # Maybe get request with requestId as a query param?
+        response, requestId = requests.get(
+            'web login api',
+            json={'requestId': requestId}
+        )
+
+        if response['status'] == 200:
+            success = True
+            break
+
+        time.sleep(1)
+
+
+    if success:
+        roles = discord.utils.get(ctx.guild.roles, name='Verified')
+        await author.add_roles(roles)
+        outcome = '“Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.” '
+
+
+    await interaction.response.send_message(
+        outcome,
+        ephemeral=True
+    )
+
 
     currentTime = time.gmtime(time.time())
 
-    # TODO should create the embed after the verification link is set 
-    # need to wait until we get a response to determine the outcome
     embed = discord.Embed(
         title='Verify Attempt',
-        description='Status: {}'.format('Success'),
+        description='Status: {}'.format('Success' if success else 'Failure'),
         colour=discord.Colour.dark_gold(),
     )
+
     embed.set_footer(
         text=datetime.datetime(
             year=currentTime.tm_year,
@@ -268,7 +293,7 @@ async def redirect(ctx):
     """
     connect to #async with aiohttp.ClientSession() as session:
         webhook = Webhook.from_url('url-here', session=session)
-        await webhook.send('Hello World') 
+        await webhook.send('Hello World')
     """
 
     # Need to know that the endpoint is supposed to do
