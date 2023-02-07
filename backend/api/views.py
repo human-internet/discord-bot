@@ -40,11 +40,12 @@ def getRedirect(request):
 
     resJson = response.json()['data']
     return_url = resJson['webLoginUrl']
-    returnId = resJson['requestId']
+    # returnId = resJson['requestId']
     short_url = ps.Shortener().tinyurl.short(return_url)
 
     # Generate the link and send it back
-    return (Response(short_url), returnId)
+    # return (Response(short_url), returnId)
+    return (Response(short_url))
 
 
 @api_view(['PUT'])

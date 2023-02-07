@@ -73,11 +73,10 @@ async def blep(interaction: discord.Interaction, animal: discord.app_commands.Ch
 
 
     # Gets the link to humanID
-    if False:
-        response, requestId = requests.get(
-            'http://127.0.0.1:8000/api/?serverId=' +
-            str(interaction.guild.id) + str(author.id)
-        )
+    # response, requestId = requests.get(
+    response = requests.get(
+        'http://127.0.0.1:8000/api/?serverId={}&userId={}'.format(str(interaction.guild.id), str(author.id))
+    )
 
     # Creates a db entry for the user to keep track of the link timeout
     requests.put(
@@ -238,6 +237,8 @@ async def redirect(ctx):
     # 1) need to figure out what client_id and secret represents
     #   a) have tried guild id, bot id
     #   b) haven't been able to find any id that starts with SERVER
+    print(message.guild.id)
+    return
 
 
     # TODO
@@ -367,6 +368,7 @@ async def handleInteraction(interaction):
 # Should be a slash command, which might be why "This Interaction Failed" error is there
 @bot.command('test')
 async def test(ctx):
+
     message = ctx.message
     embed = discord.Embed(
         title='Verify Attempt',
