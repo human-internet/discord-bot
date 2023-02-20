@@ -72,12 +72,12 @@ async def verify(interaction: discord.Interaction):
     # Gets the link to humanID
     # response, requestId = requests.get(
     response = requests.get(
-        'http://127.0.0.1:8000/api/?serverId={}&userId={}'.format(str(interaction.guild.id), str(author.id))
+        'http://0.0.0.0:8080/api/?serverId={}&userId={}'.format(str(interaction.guild.id), str(author.id))
     )
 
     # Creates a db entry for the user to keep track of the link timeout
     requests.put(
-        'http://127.0.0.1:8000/api/start/?userId=' + str(author.id)
+        'http://0.0.0.0:8080/api/start/?userId=' + str(author.id)
     )
 
 
@@ -91,7 +91,7 @@ async def verify(interaction: discord.Interaction):
     outcome = 'Failed to verify your identity. Please try again.'
     for timeout in range(30):
         response = requests.get(
-            'http://127.0.0.1:8000/api/confirm/?userId={}'.format(str(author.id)),
+            'http://0.0.0.0:8080/api/confirm/?userId={}'.format(str(author.id)),
         )
 
         if response.status_code == 200:

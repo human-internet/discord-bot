@@ -51,3 +51,8 @@ urllib3==1.26.8
 Werkzeug==2.0.2
 wrapt==1.13.3
 wsproto==1.0.0
+django
+discord
+djangorestframework
+psycopg2
+pyshorteners

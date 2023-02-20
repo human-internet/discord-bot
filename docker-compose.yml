@@ -1,0 +1,38 @@
+version: '3.7'
+services:
+  tn146-postgres:
+    container_name: backend-server
+    image: postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./sql/databases.sql:/docker-entrypoint-initdb.d/1.databases.sql
+
+  tn146-backend:
+    build: .
+    command: python ./backend/manage.py runserver 0.0.0.0:8080
+    container_name: tn146-backend
+    volumes:
+      - .:/code
+    ports:
+      - "8080:8080"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      - tn146-postgres
+
+  tn146-frontend:
+    build: ./frontend
+    command: npm start
+    container_name: tn146-frontend
+    volumes:
+      - ./frontend/src:/front/src
+      - ./frontend/public:/front/public
+    ports:
+      - "8000:8000"
