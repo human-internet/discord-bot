@@ -13,7 +13,9 @@ services:
       - ./sql/databases.sql:/docker-entrypoint-initdb.d/1.databases.sql
 
   tn146-backend:
-    build: .
+    build:
+      dockerfile: dockerfile
+      context: ./backend
     command: python ./backend/manage.py runserver 0.0.0.0:8080
     container_name: tn146-backend
     volumes:
@@ -28,11 +30,11 @@ services:
       - tn146-postgres
 
   tn146-frontend:
-    build: ./frontend
-    command: npm start
-    container_name: tn146-frontend
+    build:
+      dockerfile: Dockerfile
+      context: ./frontend
     volumes:
-      - ./frontend/src:/front/src
-      - ./frontend/public:/front/public
+      - /app/node_modules
+      - ./frontend:/app
     ports:
-      - "8000:8000"
+      - "3000:3000"
