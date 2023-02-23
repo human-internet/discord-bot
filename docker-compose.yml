@@ -12,6 +12,15 @@ services:
     volumes:
       - ./sql/databases.sql:/docker-entrypoint-initdb.d/1.databases.sql
 
+  tn146-bot:
+    container_name: discord-bot
+    build:
+      dockerfile: dockerfile
+      context: ./bot
+    command: python ./bot/discordbot.py
+    volumes:
+      - .:/bot
+
   tn146-backend:
     build:
       dockerfile: dockerfile
