@@ -9,6 +9,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
+    expose:
+      - "5432"
     volumes:
       - ./sql/databases.sql:/docker-entrypoint-initdb.d/1.databases.sql
 
@@ -29,6 +31,8 @@ services:
     container_name: tn146-backend
     volumes:
       - .:/code
+    expose:
+      - "8080"
     ports:
       - "8080:8080"
     environment:
@@ -47,3 +51,5 @@ services:
       - ./frontend:/app
     ports:
       - "3000:3000"
+    expose:
+      - "3000"
