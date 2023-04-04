@@ -28,5 +28,17 @@ Under “Add to Server:” click on the arrow
 5. Click “Continue” and select the commands you would like to bot to do. It is recommended that you keep “Read messages”, “Send Messages” and “Embed Links” to allow the bot to work.)
 
 
+## Add Bot to Specific Channels
+1. On the Discord website or application, on the left-hand side select which discord channel you would like the bot to be in.
+2. Once you click on your channel, on the next column, click on the text channel for bot to be in. Text channels are marked with a #. 
+3. Click on the gear icon, then click “Permissions” underneath “Overview”
+4. Click the “Add members and roles” button and a popup will appear. 
+5. Click the textbox that says “e.g. Moderators, @wumpus” and type in “Chat Bot”
+6. Under “MEMBERS” click on “Chat Bot”
+7. Finally, click “Done” at the bottom right corner, and your bot will be added to your channel. 
+
+
+
+
 
 
