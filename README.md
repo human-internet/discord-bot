@@ -37,7 +37,7 @@ Under “Add to Server:” click on the arrow
 6. Under “MEMBERS” click on “Chat Bot”
 7. Finally, click “Done” at the bottom right corner, and your bot will be added to your channel. 
 
-
+![discord bot](https://user-images.githubusercontent.com/105180978/229897163-86babf9e-3c33-4ed0-8eee-e87695d65e8a.png)
 
 
 
