@@ -11,9 +11,7 @@ from datetime import datetime, timedelta
 
 @api_view(['GET'])
 def getRedirect(request):
-    # TODO pass in hashed version of server ID to identify the clientID and secret to use?
     idQuery = request.query_params.get('serverId', None) # unhash here?
-    userQuery = request.query_params.get('userId', None) # unhash here?
 
     if not idQuery:
         return HttpResponse(status=500)
@@ -23,29 +21,24 @@ def getRedirect(request):
     serializer = ServerSerializer(servers, many=False).data
     CLIENT_ID = serializer['clientId']
     cs = serializer['clientSecret']
+
     headers = {
         'client-id': CLIENT_ID,
         'client-secret': cs ,
         'Content-Type' : 'application/json'
     }
-    json = {
-        'userId': userQuery,
-    }
 
     response = requests.post(
         'https://core.human-id.org/v0.0.3/server/users/web-login',
         headers=headers,
-        json=json
     )
 
     resJson = response.json()['data']
     return_url = resJson['webLoginUrl']
-    # returnId = resJson['requestId']
     short_url = ps.Shortener().tinyurl.short(return_url)
 
     # Generate the link and send it back
-    # return (Response(short_url), returnId)
-    return (Response(short_url))
+    return Response(short_url)
 
 
 @api_view(['PUT'])
@@ -73,8 +66,9 @@ def verifyAttempt(request):
 
         return Response('done')
 
+
 @api_view(['PUT', 'GET'])
-def finish(request):
+def success(request):
     userQuery = request.query_params.get('userId', None) # unhash here?
 
     if not userQuery:
@@ -107,16 +101,19 @@ def closeVerify(request):
         .replace('Z', '')))
 
 
-    if created - datetime.now() < timedelta(minutes=30) and serializer['verified']:
-        # If the attempt to verify was within a 30 minute time frame
+    if created - datetime.now() < timedelta(minutes=5) and serializer['verified']:
+        # If the attempt to verify was within a 5 minute time frame
         user = Person.objects.get(userId=userQuery)
         user.verified = False
         user.save()
-
         status = 200
 
+    elif created - datetime.now() < timedelta(minutes=5) and not serializer['verified']:
+        # Verification still in progress without timeout
+        status = 202
+
     else:
-        # Create an entry representing the user trying to verify
+        # 5 minute timeout has been reached
         status = 504
 
     return HttpResponse(status=status)

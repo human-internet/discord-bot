@@ -70,35 +70,50 @@ async def verify(interaction: discord.Interaction):
 
 
     # Gets the link to humanID
-    # response, requestId = requests.get(
     response = requests.get(
-        'http://0.0.0.0:8080/api/?serverId={}&userId={}'.format(str(interaction.guild.id), str(author.id))
+        'http://127.0.0.1:8000/api?serverId=' + str(interaction.guild.id)
     )
 
     # Creates a db entry for the user to keep track of the link timeout
     requests.put(
-        'http://0.0.0.0:8080/api/start/?userId=' + str(author.id)
+        'http://127.0.0.1:8000/api/start/?userId=' + str(author.id)
     )
 
+
+    # hash id here TODO
+    hashedId = str(author.id);
 
     # Send the humanID link that is unique to the current discord server
     await interaction.response.send_message(
-        'Please use this link to verify: {}'.format('http://localhost:3000/?test=' + str(author.id) or response.json()),
+        'Please use this link to verify: {}'.format(
+            # TODO hash id
+            'http://127.0.0.1:3000?user={}&url={}'.format(hashedId, response.json())
+        ),
         ephemeral=True
     )
 
+
     success = False
     outcome = 'Failed to verify your identity. Please try again.'
-    for timeout in range(30):
+
+    # 5 minute of pinging
+    for timeout in range(100):
         response = requests.get(
-            'http://0.0.0.0:8080/api/confirm/?userId={}'.format(str(author.id)),
+            'http://127.0.0.1:8000/api/confirm/?userId={}'.format(hashedId),
         )
 
+        # verification success
         if response.status_code == 200:
             success = True
             break
 
-        time.sleep(1)
+        # user has not verified yet
+        elif response.status_code == 202:
+            await asyncio.sleep(3)
+
+        # unable to verify (timeout) or there was never an a verification attempt with the given user
+        else:
+            break
 
     if success:
         roles = discord.utils.get(interaction.guild.roles, name='Verified')
@@ -280,6 +295,7 @@ async def test(ctx):
 
 @bot.event
 async def on_interaction(interaction):
+    print(interaction.guild.id)
     print(interaction.data)
 
 
