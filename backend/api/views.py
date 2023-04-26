@@ -117,3 +117,14 @@ def closeVerify(request):
         status = 504
 
     return HttpResponse(status=status)
+
+
+@api_view(['GET'])
+def suc(request):
+    res = HttpResponse(status=200)
+    return res
+
+@api_view(['GET'])
+def fail(request):
+    res = HttpResponse(status=400)
+    return res

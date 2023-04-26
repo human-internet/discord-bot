@@ -33,7 +33,6 @@ function startLoginProcess(e) {
     }
 }
 
-
 function verificationSuccess(token) {
     console.log(111)
     fetch(`http://localhost:8000/api/success/?user=${user}`, {
