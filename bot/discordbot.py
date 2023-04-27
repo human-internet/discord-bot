@@ -93,7 +93,7 @@ async def verify(interaction: discord.Interaction):
     await interaction.response.send_message(
         'Please use this link to verify: {}'.format(
             # TODO hash id
-            FRONTEND_URL+'?user={}&server={}&url={}'.format(hashedId, interaction.guild.id, response.json())
+            FRONTEND_URL + '?user={}&server={}&url={}'.format(hashedId, interaction.guild.id, response.json())
         ),
         ephemeral=True
     )
@@ -105,7 +105,7 @@ async def verify(interaction: discord.Interaction):
     # 5 minute of pinging
     for timeout in range(100):
         response = requests.get(
-            BACKEND_URL+'/api/confirm/?userId={}'.format(hashedId),
+            BACKEND_URL + '/api/confirm/?userId={}'.format(hashedId),
         )
 
         # verification success
@@ -162,7 +162,6 @@ async def verify(interaction: discord.Interaction):
 # specify the settings via the parameters
 @bot.tree.command(name='setup')
 async def setup(interaction: discord.Interaction):
-
     # TODO
     if not interaction.user.guild_permissions.administrator and False:
         await interaction.response.send_message(
@@ -203,7 +202,6 @@ async def setup(interaction: discord.Interaction):
 
 async def handleInteraction(interaction):
     origMessage = interaction.message
-    print(33)
 
     if interaction.data['component_type'] == 2:
         print('button')
@@ -211,6 +209,7 @@ async def handleInteraction(interaction):
 
     chosen = interaction.data['values']
     if chosen[0] in ['text', 'voice', 'category']:
+        # setup choices for channel selection
         channelType = discord.ChannelType.text
         maxSize = len(interaction.guild.text_channels)
         if chosen[0] == 'voice':
@@ -232,7 +231,7 @@ async def handleInteraction(interaction):
         await interaction.response.edit_message(view=view)
 
     else:
-        # channel
+        # hide channel
         updatedChannels = []
         verifiedRole = discord.utils.get(origMessage.guild.roles, name='Verified')
         everyone = discord.utils.get(origMessage.guild.roles, name='@everyone')

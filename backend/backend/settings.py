@@ -63,7 +63,6 @@ MIDDLEWARE = [
 
 # disable cors on development
 if DEBUG is True:
-    print("yes debig is true")
     INSTALLED_APPS += ('corsheaders',)
     MIDDLEWARE += ("corsheaders.middleware.CorsMiddleware",
                    "django.middleware.common.CommonMiddleware",)

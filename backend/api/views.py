@@ -72,21 +72,6 @@ def verifyAttempt(request):
         return Response('done')
 
 
-@api_view(['PUT', 'GET'])
-def success(request):
-    userQuery = request.query_params.get('userId', None)  # unhash here?
-
-    if not userQuery:
-        return HttpResponse(status=500)
-
-    user = Person.objects.get(userId=userQuery)
-    user.verified = True
-    user.save()
-
-    res = HttpResponse(status=200)
-    return res
-
-
 @api_view(['GET'])
 def closeVerify(request):
     userQuery = request.query_params.get('userId', None)  # unhash here?
@@ -139,9 +124,11 @@ def verification_successful(request):
         return Response("The exchange token is required", status=400)
 
     exchangeToken = urllib.parse.unquote(exchangeToken)
+
     # Grabs the required data about the server to generate the unique humanID link
     servers = Server.objects.get(serverId=idQuery)
     serializer = ServerSerializer(servers, many=False).data
+    user = Person.objects.get(userId=userQuery)
     CLIENT_ID = serializer['clientId']
     CLIENT_SECRET = serializer['clientSecret']
 
@@ -152,25 +139,27 @@ def verification_successful(request):
         'Content-Type': 'application/json'
     }
 
+
+    # bug catch
+    # avoids recalling with the same exchange token
+    if (user.verified):
+        return HttpResponse(status=200)
+
+    # verify exchange token
     response = requests.post(
         'https://core.human-id.org/v0.0.3/server/users/exchange',
         headers=headers,
         json={"exchangeToken": exchangeToken.replace(" ", "+")}
     )
+
     resJson = response.json()
-    print(resJson)
     if response.status_code == 200:
-        # You can set the user as verified here
-        # user = Person.objects.get(userId=userQuery)
-        # user.verified = True
-        # user.save()
+        # success
+        user = Person.objects.get(userId=userQuery)
+        user.verified = True
+        user.save()
 
         return HttpResponse(status=200)
     else:
+        # fail
         return Response(resJson, status=400)
-
-
-@api_view(['GET'])
-def fail(request):
-    res = HttpResponse(status=400)
-    return res
