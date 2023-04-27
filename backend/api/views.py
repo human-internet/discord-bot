@@ -4,14 +4,19 @@ from django.http import HttpResponse
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 import pyshorteners as ps
-from . serializers import *
+from .serializers import *
 import requests
+import urllib.parse
+import environ
+
 from datetime import datetime, timedelta
+
+env = environ.Env()
 
 
 @api_view(['GET'])
 def getRedirect(request):
-    idQuery = request.query_params.get('serverId', None) # unhash here?
+    idQuery = request.query_params.get('serverId', None)  # unhash here?
 
     if not idQuery:
         return HttpResponse(status=500)
@@ -20,12 +25,12 @@ def getRedirect(request):
     servers = Server.objects.get(serverId=idQuery)
     serializer = ServerSerializer(servers, many=False).data
     CLIENT_ID = serializer['clientId']
-    cs = serializer['clientSecret']
+    CLIENT_SECRET = serializer['clientSecret']
 
     headers = {
         'client-id': CLIENT_ID,
-        'client-secret': cs ,
-        'Content-Type' : 'application/json'
+        'client-secret': CLIENT_SECRET,
+        'Content-Type': 'application/json'
     }
 
     response = requests.post(
@@ -43,7 +48,7 @@ def getRedirect(request):
 
 @api_view(['PUT'])
 def verifyAttempt(request):
-    userQuery = request.query_params.get('userId', None) # unhash here?
+    userQuery = request.query_params.get('userId', None)  # unhash here?
 
     if not userQuery:
         return HttpResponse(status=500)
@@ -59,9 +64,9 @@ def verifyAttempt(request):
     else:
         # Create an entry representing the user trying to verify
         Person.objects.create(
-            userId = userQuery,
-            created = timezone.now(),
-            verified = False,
+            userId=userQuery,
+            created=timezone.now(),
+            verified=False,
         )
 
         return Response('done')
@@ -69,7 +74,7 @@ def verifyAttempt(request):
 
 @api_view(['PUT', 'GET'])
 def success(request):
-    userQuery = request.query_params.get('userId', None) # unhash here?
+    userQuery = request.query_params.get('userId', None)  # unhash here?
 
     if not userQuery:
         return HttpResponse(status=500)
@@ -84,7 +89,7 @@ def success(request):
 
 @api_view(['GET'])
 def closeVerify(request):
-    userQuery = request.query_params.get('userId', None) # unhash here?
+    userQuery = request.query_params.get('userId', None)  # unhash here?
 
     if not userQuery:
         return HttpResponse(status=500)
@@ -97,9 +102,8 @@ def closeVerify(request):
     status = None
     serializer = PersonSerializer(user, many=False).data
     created = (datetime.fromisoformat(serializer['created']
-        .replace('T', ' ')
-        .replace('Z', '')))
-
+                                      .replace('T', ' ')
+                                      .replace('Z', '')))
 
     if created - datetime.now() < timedelta(minutes=5) and serializer['verified']:
         # If the attempt to verify was within a 5 minute time frame
@@ -120,9 +124,51 @@ def closeVerify(request):
 
 
 @api_view(['GET'])
-def suc(request):
-    res = HttpResponse(status=200)
-    return res
+def verification_successful(request):
+    idQuery = request.query_params.get('serverId', None)  # unhash here?
+    userQuery = request.query_params.get('userId', None)
+    exchangeToken = request.query_params.get('et')
+
+    if not idQuery:
+        return Response("The server id is required", status=400)
+
+    if not userQuery:
+        return Response("The user id is required", status=400)
+
+    if not exchangeToken:
+        return Response("The exchange token is required", status=400)
+
+    exchangeToken = urllib.parse.unquote(exchangeToken)
+    # Grabs the required data about the server to generate the unique humanID link
+    servers = Server.objects.get(serverId=idQuery)
+    serializer = ServerSerializer(servers, many=False).data
+    CLIENT_ID = serializer['clientId']
+    CLIENT_SECRET = serializer['clientSecret']
+
+
+    headers = {
+        'client-id': CLIENT_ID,
+        'client-secret': CLIENT_SECRET,
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.post(
+        'https://core.human-id.org/v0.0.3/server/users/exchange',
+        headers=headers,
+        json={"exchangeToken": exchangeToken.replace(" ", "+")}
+    )
+    resJson = response.json()
+    print(resJson)
+    if response.status_code == 200:
+        # You can set the user as verified here
+        # user = Person.objects.get(userId=userQuery)
+        # user.verified = True
+        # user.save()
+
+        return HttpResponse(status=200)
+    else:
+        return Response(resJson, status=400)
+
 
 @api_view(['GET'])
 def fail(request):

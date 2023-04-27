@@ -10,6 +10,10 @@ import pyshorteners as ps
 import aiohttp
 import requests
 import pyshorteners as ps
+from dotenv import dotenv_values
+
+# load the environment variables
+env = dotenv_values()
 
 
 # Will need to move this somewhere other than a source file in the future
@@ -68,15 +72,17 @@ async def verify(interaction: discord.Interaction):
         )
         return
 
+    BACKEND_URL = env["DISCORD_BACKEND_URL"]
+    FRONTEND_URL = env["DISCORD_FRONTEND_URL"]
 
     # Gets the link to humanID
     response = requests.get(
-        'http://127.0.0.1:8000/api?serverId=' + str(interaction.guild.id)
+        BACKEND_URL+'/api?serverId=' + str(interaction.guild.id)
     )
 
     # Creates a db entry for the user to keep track of the link timeout
     requests.put(
-        'http://127.0.0.1:8000/api/start/?userId=' + str(author.id)
+        BACKEND_URL+'/api/start/?userId=' + str(author.id)
     )
 
 
@@ -87,7 +93,7 @@ async def verify(interaction: discord.Interaction):
     await interaction.response.send_message(
         'Please use this link to verify: {}'.format(
             # TODO hash id
-            'http://127.0.0.1:3000?user={}&url={}'.format(hashedId, response.json())
+            FRONTEND_URL+'?user={}&server={}&url={}'.format(hashedId, interaction.guild.id, response.json())
         ),
         ephemeral=True
     )
@@ -99,7 +105,7 @@ async def verify(interaction: discord.Interaction):
     # 5 minute of pinging
     for timeout in range(100):
         response = requests.get(
-            'http://127.0.0.1:8000/api/confirm/?userId={}'.format(hashedId),
+            BACKEND_URL+'/api/confirm/?userId={}'.format(hashedId),
         )
 
         # verification success

@@ -54,5 +54,8 @@ wsproto==1.0.0
 django
 discord
 djangorestframework
-psycopg2
+psycopg2-binary
 pyshorteners
+django-cors-headers
+django-environ
+

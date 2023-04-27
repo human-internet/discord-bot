@@ -1,2 +1,4 @@
 discord
 pyshorteners
+python-dotenv
+
