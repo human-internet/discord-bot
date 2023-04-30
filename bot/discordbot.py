@@ -62,7 +62,9 @@ async def verify(interaction: discord.Interaction):
     if not channels:
         await interaction.guild.create_text_channel('logs')
 
-    author = interaction.user
+    author   = interaction.user
+    serverId = str(interaction.guild.id)
+    userId   = str(author.id)
 
     if interaction.channel.name != 'get-verified':
         channels = discord.utils.get(interaction.guild.channels, name='get-verified').id
@@ -77,23 +79,23 @@ async def verify(interaction: discord.Interaction):
 
     # Gets the link to humanID
     response = requests.get(
-        BACKEND_URL+'/api?serverId=' + str(interaction.guild.id)
+        BACKEND_URL+'/api?serverId=' + serverId
     )
 
     # Creates a db entry for the user to keep track of the link timeout
     requests.put(
-        BACKEND_URL+'/api/start/?userId=' + str(author.id)
+        BACKEND_URL+'/api/start/?userId={}&serverId={}'.format(userId, serverId)
     )
 
 
     # hash id here TODO
-    hashedId = str(author.id);
+    hashedId = userId;
 
     # Send the humanID link that is unique to the current discord server
     await interaction.response.send_message(
         'Please use this link to verify: {}'.format(
             # TODO hash id
-            FRONTEND_URL + '?user={}&server={}&url={}'.format(hashedId, interaction.guild.id, response.json())
+            FRONTEND_URL + '?user={}&server={}&url={}'.format(hashedId, serverId, response.json())
         ),
         ephemeral=True
     )
@@ -105,7 +107,7 @@ async def verify(interaction: discord.Interaction):
     # 5 minute of pinging
     for timeout in range(100):
         response = requests.get(
-            BACKEND_URL + '/api/confirm/?userId={}'.format(hashedId),
+            BACKEND_URL + '/api/confirm/?userId={}&serverId={}'.format(hashedId, serverId),
         )
 
         # verification success

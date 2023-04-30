@@ -1,6 +1,6 @@
 import React, {useEffect} from 'react';
 import {useSearchParams} from "react-router-dom";
-import 'Verification.css';
+import './Verification.css';
 
 function startLoginProcess(verificationLink) {
   window.location.href = verificationLink;

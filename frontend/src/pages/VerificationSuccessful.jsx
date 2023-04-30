@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useSearchParams} from "react-router-dom";
-import 'Verification.css';
+import './Verification.css';
 
 function VerificationSuccessful() {
   const [searchParams] = useSearchParams();
@@ -26,6 +26,7 @@ function VerificationSuccessful() {
         setVerificationStatus('verified');
         localStorage.removeItem("uId");
         localStorage.removeItem("server");
+        //window.close() TODO
         window.location.replace('https://discord.com/channels/' + server);
       }
     } catch (e) {

@@ -1,6 +1,6 @@
 import React from 'react';
 import {useSearchParams} from "react-router-dom";
-import 'Verification.css';
+import './Verification.css';
 
 function VerificationFailed() {
   const [searchParams] = useSearchParams();
