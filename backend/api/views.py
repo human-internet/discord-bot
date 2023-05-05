@@ -33,6 +33,7 @@ def getRedirect(request):
         'Content-Type': 'application/json'
     }
 
+    # generate weblogin url
     response = requests.post(
         'https://core.human-id.org/v0.0.3/server/users/web-login',
         headers=headers,
@@ -42,7 +43,6 @@ def getRedirect(request):
     return_url = resJson['webLoginUrl']
     short_url = ps.Shortener().tinyurl.short(return_url)
 
-    # Generate the link and send it back
     return Response(short_url)
 
 
@@ -57,7 +57,8 @@ def verifyAttempt(request):
     if not userQuery:
         return Response("The user id is required", status=400)
 
-
+    # user identifier will be in the format "userId-serverId"
+    # a user attempting to verify in multiple servers need to verify for each server
     identifier = '{}-{}'.format(userQuery, serverQuery)
 
     duplicate = Person.objects.filter(userId=identifier).exists()
@@ -92,6 +93,7 @@ def closeVerify(request):
 
     identifier = '{}-{}'.format(userQuery, serverQuery)
 
+    # there exists a db entry with the given identifier
     validAttempt = Person.objects.filter(userId=identifier).exists()
     if not validAttempt:
         return HttpResponse(status=404)
@@ -104,7 +106,7 @@ def closeVerify(request):
                                       .replace('Z', '')))
 
     if created - datetime.now() < timedelta(minutes=5) and serializer['verified']:
-        # If the attempt to verify was within a 5 minute time frame
+        # If the attempt to verify was within a 5 minute time frame and they verified
         user = Person.objects.get(userId=identifier)
         user.verified = False
         user.save()
