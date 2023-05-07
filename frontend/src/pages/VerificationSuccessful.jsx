@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {useSearchParams} from "react-router-dom";
-import 'Verification.css';
+import './Verification.css';
 
 function VerificationSuccessful() {
   const [searchParams] = useSearchParams();
@@ -8,7 +8,6 @@ function VerificationSuccessful() {
   const [errorMessage, setErrorMessage] = useState('')
 
   const exchangeToken = searchParams.get('et');
-  const userId = localStorage.getItem("uId");
   const server = localStorage.getItem("server");
   const BACKEN_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -16,7 +15,7 @@ function VerificationSuccessful() {
   const continueVerification = async (exchangeToken) => {
     setVerificationStatus('pending');
     try {
-      const resp = await fetch(BACKEN_URL + `/api/verification_successful/?userId=${userId}&serverId=${server}&et=${exchangeToken}`);
+      const resp = await fetch(BACKEN_URL + `/api/verification_successful/?&serverId=${server}&et=${exchangeToken}`);
       if (resp.status >= 400) {
         setVerificationStatus('failed');
         resp.json().then((e) => {
@@ -24,7 +23,6 @@ function VerificationSuccessful() {
         }).catch((e) => setErrorMessage("An error occurred."));
       } else {
         setVerificationStatus('verified');
-        localStorage.removeItem("uId");
         localStorage.removeItem("server");
         window.location.replace('https://discord.com/channels/' + server);
       }

@@ -18,6 +18,7 @@ env = environ.Env()
 def getRedirect(request):
     idQuery = request.query_params.get('serverId', None)  # unhash here?
 
+    # Does not have a query
     if not idQuery:
         return HttpResponse(status=500)
 
@@ -34,37 +35,43 @@ def getRedirect(request):
     }
 
     response = requests.post(
-        'https://core.human-id.org/v0.0.3/server/users/web-login',
+        'https://api.human-id.org/v1/server/users/web-login',
         headers=headers,
     )
 
     resJson = response.json()['data']
     return_url = resJson['webLoginUrl']
+    requestId = resJson['requestId']
     short_url = ps.Shortener().tinyurl.short(return_url)
 
     # Generate the link and send it back
-    return Response(short_url)
+    return Response({
+        'url': short_url,
+        'requestId': requestId,
+    })
 
 
 @api_view(['PUT'])
 def verifyAttempt(request):
-    userQuery = request.query_params.get('userId', None)  # unhash here?
+    userQuery = request.query_params.get('requestId', None)  # unhash here?
 
+    # Does not have a query
     if not userQuery:
         return HttpResponse(status=500)
 
-    duplicate = Person.objects.filter(userId=userQuery).exists()
+    duplicate = Person.objects.filter(requestId=userQuery).exists()
     if duplicate:
         # If the user has a duplicate entry, just update the created time
-        user = Person.objects.get(userId=userQuery)
+        user = Person.objects.get(requestId=userQuery)
         user.created = timezone.now()
+        user.verified = False
         user.save()
         return Response('done')
 
     else:
         # Create an entry representing the user trying to verify
         Person.objects.create(
-            userId=userQuery,
+            requestId=userQuery,
             created=timezone.now(),
             verified=False,
         )
@@ -73,26 +80,28 @@ def verifyAttempt(request):
 
 
 @api_view(['GET'])
-def closeVerify(request):
-    userQuery = request.query_params.get('userId', None)  # unhash here?
+def checkVerify(request):
+    userQuery = request.query_params.get('requestId', None)  # unhash here?
 
+    # Does not have a query
     if not userQuery:
         return HttpResponse(status=500)
 
-    validAttempt = Person.objects.filter(userId=userQuery).exists()
+    # entry with the given requestId doesnt exist
+    validAttempt = Person.objects.filter(requestId=userQuery).exists()
     if not validAttempt:
         return HttpResponse(status=404)
 
-    user = Person.objects.get(userId=userQuery)
-    status = None
+    user       = Person.objects.get(requestId=userQuery)
+    status     = None
     serializer = PersonSerializer(user, many=False).data
-    created = (datetime.fromisoformat(serializer['created']
+    created    = (datetime.fromisoformat(serializer['created']
                                       .replace('T', ' ')
                                       .replace('Z', '')))
 
     if created - datetime.now() < timedelta(minutes=5) and serializer['verified']:
         # If the attempt to verify was within a 5 minute time frame
-        user = Person.objects.get(userId=userQuery)
+        user = Person.objects.get(requestId=userQuery)
         user.verified = False
         user.save()
         status = 200
@@ -108,30 +117,45 @@ def closeVerify(request):
     return HttpResponse(status=status)
 
 
+@api_view(['DELETE'])
+def closeVerify(request):
+    userQuery = request.query_params.get('requestId', None)  # unhash here?
+
+    # Does not have a query
+    if not userQuery:
+        return HttpResponse(status=500)
+
+    # entry with the given requestId doesnt exist
+    validAttempt = Person.objects.filter(requestId=userQuery).exists()
+    if not validAttempt:
+        return HttpResponse(status=404)
+
+    user = Person.objects.get(requestId=userQuery)
+    user.delete()
+
+    return HttpResponse(status=200)
+
+
+
 @api_view(['GET'])
 def verification_successful(request):
     idQuery = request.query_params.get('serverId', None)  # unhash here?
-    userQuery = request.query_params.get('userId', None)
     exchangeToken = request.query_params.get('et')
 
     if not idQuery:
         return Response("The server id is required", status=400)
 
-    if not userQuery:
-        return Response("The user id is required", status=400)
-
     if not exchangeToken:
         return Response("The exchange token is required", status=400)
+
 
     exchangeToken = urllib.parse.unquote(exchangeToken)
 
     # Grabs the required data about the server to generate the unique humanID link
     servers = Server.objects.get(serverId=idQuery)
     serializer = ServerSerializer(servers, many=False).data
-    user = Person.objects.get(userId=userQuery)
     CLIENT_ID = serializer['clientId']
     CLIENT_SECRET = serializer['clientSecret']
-
 
     headers = {
         'client-id': CLIENT_ID,
@@ -139,23 +163,25 @@ def verification_successful(request):
         'Content-Type': 'application/json'
     }
 
-
     # bug catch
     # avoids recalling with the same exchange token
-    if (user.verified):
+    if (False and user.verified):
         return HttpResponse(status=200)
 
     # verify exchange token
     response = requests.post(
-        'https://core.human-id.org/v0.0.3/server/users/exchange',
+        'https://api.human-id.org/v1/server/users/exchange',
         headers=headers,
         json={"exchangeToken": exchangeToken.replace(" ", "+")}
     )
 
     resJson = response.json()
+
     if response.status_code == 200:
+        requestId = resJson['data']['requestId']
+
         # success
-        user = Person.objects.get(userId=userQuery)
+        user = Person.objects.get(requestId=requestId)
         user.verified = True
         user.save()
 

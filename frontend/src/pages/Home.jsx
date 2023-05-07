@@ -1,6 +1,6 @@
 import React, {useEffect} from 'react';
 import {useSearchParams} from "react-router-dom";
-import 'Verification.css';
+import './Verification.css';
 
 function startLoginProcess(verificationLink) {
   window.location.href = verificationLink;
@@ -10,14 +10,12 @@ function Home() {
   const [searchParams] = useSearchParams();
 
   const loginURL = searchParams.get('url');
-  const user = searchParams.get('user');
   const server = searchParams.get('server');
 
   useEffect(()=> {
-    localStorage.setItem("uId", user);
     localStorage.setItem("server", server);
     startLoginProcess(loginURL);
-  },[loginURL, user, server]);
+  },[loginURL, server]);
 
   return (
     <header className="App-header">

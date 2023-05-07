@@ -52,7 +52,7 @@ async def on_guild_join(guild):
         await guild.create_text_channel('get-verified')
 
     channels = discord.utils.get(guild.channels, name='get-verified')
-    await channels.send('Please use the ‘/verify’ command to start the humanID verification process.')
+    await channels.send('By using the ‘/verify’ command, you can start the humanID verification process.')
 
 
 # Catches the /verify slash command
@@ -77,12 +77,16 @@ async def verify(interaction: discord.Interaction):
 
     # Gets the link to humanID
     response = requests.get(
-        BACKEND_URL+'/api?serverId=' + str(interaction.guild.id)
+        BACKEND_URL + '/api?serverId=' + str(interaction.guild.id)
     )
+
+    resJson   = response.json()
+    requestId = resJson['requestId']
+    url       = resJson['url']
 
     # Creates a db entry for the user to keep track of the link timeout
     requests.put(
-        BACKEND_URL+'/api/start/?userId=' + str(author.id)
+        BACKEND_URL + '/api/start/?requestId={}'.format(requestId)
     )
 
 
@@ -93,7 +97,7 @@ async def verify(interaction: discord.Interaction):
     await interaction.response.send_message(
         'Please use this link to verify: {}'.format(
             # TODO hash id
-            FRONTEND_URL + '?user={}&server={}&url={}'.format(hashedId, interaction.guild.id, response.json())
+            FRONTEND_URL + '?server={}&url={}'.format(interaction.guild.id, url)
         ),
         ephemeral=True
     )
@@ -105,7 +109,7 @@ async def verify(interaction: discord.Interaction):
     # 5 minute of pinging
     for timeout in range(100):
         response = requests.get(
-            BACKEND_URL + '/api/confirm/?userId={}'.format(hashedId),
+            BACKEND_URL + '/api/confirm/?requestId={}'.format(requestId),
         )
 
         # verification success
@@ -122,6 +126,9 @@ async def verify(interaction: discord.Interaction):
             break
 
     if success:
+        requests.delete(
+            BACKEND_URL + '/api/removeEntry/?requestId={}'.format(requestId)
+        )
         roles = discord.utils.get(interaction.guild.roles, name='Verified')
         await author.add_roles(roles)
         outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
