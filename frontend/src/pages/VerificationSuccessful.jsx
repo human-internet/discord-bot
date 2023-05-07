@@ -24,6 +24,7 @@ function VerificationSuccessful() {
       } else {
         setVerificationStatus('verified');
         localStorage.removeItem("server");
+        //window.close() TODO
         window.location.replace('https://discord.com/channels/' + server);
       }
     } catch (e) {

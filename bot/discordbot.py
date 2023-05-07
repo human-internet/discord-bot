@@ -62,9 +62,12 @@ async def verify(interaction: discord.Interaction):
     if not channels:
         await interaction.guild.create_text_channel('logs')
 
-    author = interaction.user
+    author   = interaction.user
+    serverId = str(interaction.guild.id)
+    userId   = str(author.id)
 
     if interaction.channel.name != 'get-verified':
+        # message was not sent in the allowed channel
         channels = discord.utils.get(interaction.guild.channels, name='get-verified').id
         await interaction.response.send_message(
             'This command can only be used in the <#{}> channel.'.format(str(channels)),
@@ -77,7 +80,7 @@ async def verify(interaction: discord.Interaction):
 
     # Gets the link to humanID
     response = requests.get(
-        BACKEND_URL + '/api?serverId=' + str(interaction.guild.id)
+        BACKEND_URL+'/api?serverId=' + serverId
     )
 
     resJson   = response.json()
@@ -91,7 +94,7 @@ async def verify(interaction: discord.Interaction):
 
 
     # hash id here TODO
-    hashedId = str(author.id);
+    hashedId = userId;
 
     # Send the humanID link that is unique to the current discord server
     await interaction.response.send_message(
@@ -137,8 +140,8 @@ async def verify(interaction: discord.Interaction):
     await interaction.edit_original_response(content=outcome)
 
 
+    # log verification attempt into the log channel
     currentTime = time.gmtime(time.time())
-
     embed = discord.Embed(
         title='Verify Attempt',
         description='Status: {}'.format('Success' if success else 'Failure'),
@@ -169,8 +172,8 @@ async def verify(interaction: discord.Interaction):
 # specify the settings via the parameters
 @bot.tree.command(name='setup')
 async def setup(interaction: discord.Interaction):
-    # TODO
     if not interaction.user.guild_permissions.administrator and False:
+        # only admins can run this commmand
         await interaction.response.send_message(
             'Access to the bot settings is only available to admins. Please contact an admin if you would like to change the settings.',
             ephemeral=True

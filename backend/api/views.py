@@ -16,14 +16,14 @@ env = environ.Env()
 
 @api_view(['GET'])
 def getRedirect(request):
-    idQuery = request.query_params.get('serverId', None)  # unhash here?
+    serverQuery = request.query_params.get('serverId', None)  # unhash here?
 
     # Does not have a query
-    if not idQuery:
-        return HttpResponse(status=500)
+    if not serverQuery:
+        return Response("The server id is required", status=400)
 
     # Grabs the required data about the server to generate the unique humanID link
-    servers = Server.objects.get(serverId=idQuery)
+    servers = Server.objects.get(serverId=serverQuery)
     serializer = ServerSerializer(servers, many=False).data
     CLIENT_ID = serializer['clientId']
     CLIENT_SECRET = serializer['clientSecret']
@@ -34,6 +34,7 @@ def getRedirect(request):
         'Content-Type': 'application/json'
     }
 
+    # generate weblogin url
     response = requests.post(
         'https://api.human-id.org/v1/server/users/web-login',
         headers=headers,
@@ -57,7 +58,7 @@ def verifyAttempt(request):
 
     # Does not have a query
     if not userQuery:
-        return HttpResponse(status=500)
+        return Response("The user id is required", status=400)
 
     duplicate = Person.objects.filter(requestId=userQuery).exists()
     if duplicate:
@@ -82,10 +83,9 @@ def verifyAttempt(request):
 @api_view(['GET'])
 def checkVerify(request):
     userQuery = request.query_params.get('requestId', None)  # unhash here?
-
     # Does not have a query
     if not userQuery:
-        return HttpResponse(status=500)
+        return Response("The user id is required", status=400)
 
     # entry with the given requestId doesnt exist
     validAttempt = Person.objects.filter(requestId=userQuery).exists()
@@ -142,7 +142,7 @@ def verification_successful(request):
     idQuery = request.query_params.get('serverId', None)  # unhash here?
     exchangeToken = request.query_params.get('et')
 
-    if not idQuery:
+    if not serverQuery:
         return Response("The server id is required", status=400)
 
     if not exchangeToken:
@@ -150,9 +150,10 @@ def verification_successful(request):
 
 
     exchangeToken = urllib.parse.unquote(exchangeToken)
+    identifier = '{}-{}'.format(userQuery, serverQuery)
 
     # Grabs the required data about the server to generate the unique humanID link
-    servers = Server.objects.get(serverId=idQuery)
+    servers = Server.objects.get(serverId=serverQuery)
     serializer = ServerSerializer(servers, many=False).data
     CLIENT_ID = serializer['clientId']
     CLIENT_SECRET = serializer['clientSecret']
@@ -165,7 +166,7 @@ def verification_successful(request):
 
     # bug catch
     # avoids recalling with the same exchange token
-    if (False and user.verified):
+    if (user.verified):
         return HttpResponse(status=200)
 
     # verify exchange token
