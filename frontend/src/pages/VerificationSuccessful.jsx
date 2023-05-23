@@ -31,7 +31,7 @@ function VerificationSuccessful() {
         //window.close() TODO
         window.location.replace('https://discord.com/channels/' + server);
       }
-      setVerificationSent(true;)
+      setVerificationSent(true);
     } catch (e) {
       setVerificationStatus('failed');
       setErrorMessage("An error occurred.");
