@@ -163,11 +163,6 @@ def verification_successful(request):
         'Content-Type': 'application/json'
     }
 
-    # bug catch
-    # avoids recalling with the same exchange token
-    if (user.verified):
-        return HttpResponse(status=200)
-
     # verify exchange token
     response = requests.post(
         'https://api.human-id.org/v1/server/users/exchange',

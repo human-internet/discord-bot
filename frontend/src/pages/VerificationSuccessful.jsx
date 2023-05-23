@@ -5,6 +5,7 @@ import './Verification.css';
 function VerificationSuccessful() {
   const [searchParams] = useSearchParams();
   const [verificationStatus, setVerificationStatus] = useState('pending');
+  const [verificationSent, setVerificationSent] = useState(false);
   const [errorMessage, setErrorMessage] = useState('')
 
   const exchangeToken = searchParams.get('et');
@@ -15,6 +16,9 @@ function VerificationSuccessful() {
   const continueVerification = async (exchangeToken) => {
     setVerificationStatus('pending');
     try {
+      if (verificationSent) {
+        return;
+      }
       const resp = await fetch(BACKEN_URL + `/api/verification_successful/?&serverId=${server}&et=${exchangeToken}`);
       if (resp.status >= 400) {
         setVerificationStatus('failed');
@@ -27,6 +31,7 @@ function VerificationSuccessful() {
         //window.close() TODO
         window.location.replace('https://discord.com/channels/' + server);
       }
+      setVerificationSent(true;)
     } catch (e) {
       setVerificationStatus('failed');
       setErrorMessage("An error occurred.");
