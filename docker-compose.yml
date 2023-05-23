@@ -35,7 +35,7 @@ services:
       - human_id
 
   postgres:
-    container_name: tn146
+    container_name: postgres
     image: postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
