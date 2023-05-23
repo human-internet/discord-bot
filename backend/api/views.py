@@ -139,7 +139,7 @@ def closeVerify(request):
 
 @api_view(['GET'])
 def verification_successful(request):
-    idQuery = request.query_params.get('serverId', None)  # unhash here?
+    serverQuery = request.query_params.get('serverId', None)  # unhash here?
     exchangeToken = request.query_params.get('et')
 
     if not serverQuery:
@@ -150,7 +150,6 @@ def verification_successful(request):
 
 
     exchangeToken = urllib.parse.unquote(exchangeToken)
-    identifier = '{}-{}'.format(userQuery, serverQuery)
 
     # Grabs the required data about the server to generate the unique humanID link
     servers = Server.objects.get(serverId=serverQuery)
