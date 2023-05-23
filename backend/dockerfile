@@ -10,4 +10,4 @@ COPY . /code/
 
 CMD python manage.py runserver
 
-EXPOSE 8080
+EXPOSE 8000
