@@ -31,6 +31,8 @@ services:
       - ./backend/.env
     ports:
       - "8080:8080"
+    depends_on:
+      - postgres
     networks:
       - human_id
 
