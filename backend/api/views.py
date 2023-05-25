@@ -189,6 +189,10 @@ def verification_successful(request):
 
     exchangeToken = urllib.parse.unquote(exchangeToken)
 
+    exist = Server.objects.filter(serverId=serverQuery).exists()
+    if not exist:
+        return Response("The server could not be found. Please try again.", status=400)
+
     # Grabs the required data about the server to generate the unique humanID link
     servers = Server.objects.get(serverId=serverQuery)
     serializer = ServerSerializer(servers, many=False).data
