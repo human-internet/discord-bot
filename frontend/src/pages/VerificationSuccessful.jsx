@@ -23,7 +23,7 @@ function VerificationSuccessful() {
       if (resp.status >= 400) {
         setVerificationStatus('failed');
         resp.json().then((e) => {
-          setErrorMessage(JSON.stringify(e));
+          setErrorMessage(JSON.stringify(e) + `\nserverId=${server}`);
         }).catch((e) => setErrorMessage("An error occurred."));
       } else {
         setVerificationStatus('verified');

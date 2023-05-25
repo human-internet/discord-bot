@@ -128,7 +128,7 @@ def checkVerify(request):
     # entry with the given requestId doesnt exist
     validAttempt = Person.objects.filter(requestId=userQuery).exists()
     if not validAttempt:
-        return HttpResponse(status=404)
+        return Response('No attempt matching the given request id.', status=404)
 
     user       = Person.objects.get(requestId=userQuery)
     status     = None
@@ -152,7 +152,7 @@ def checkVerify(request):
         # 5 minute timeout has been reached
         status = 504
 
-    return HttpResponse(status=status)
+    return Response(status=status)
 
 
 @api_view(['DELETE'])
@@ -161,17 +161,17 @@ def closeVerify(request):
 
     # Does not have a query
     if not userQuery:
-        return HttpResponse(status=500)
+        return Response("The request id is required", status=400)
 
     # entry with the given requestId doesnt exist
     validAttempt = Person.objects.filter(requestId=userQuery).exists()
     if not validAttempt:
-        return HttpResponse(status=404)
+        return Response('No attempt matching the given request id.', status=404)
 
     user = Person.objects.get(requestId=userQuery)
     user.delete()
 
-    return HttpResponse(status=200)
+    return Response(status=200)
 
 
 
@@ -222,7 +222,7 @@ def verification_successful(request):
         user.verified = True
         user.save()
 
-        return HttpResponse(status=200)
+        return Response(status=200)
     else:
         # fail
         return Response(resJson, status=400)
