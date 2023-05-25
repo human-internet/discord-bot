@@ -20,7 +20,6 @@ function Home() {
   return (
     <header className="App-header">
       <h4 className='instructions'>
-        {server}
         Please verify via humanID
       </h4>
     </header>
