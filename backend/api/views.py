@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.utils import timezone
-from django.http import HttpResponse
+from django.http import HttpResponse, QueryDict
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 import pyshorteners as ps
@@ -13,6 +13,38 @@ from datetime import datetime, timedelta
 
 env = environ.Env()
 
+@api_view(['PUT'])
+def addServer(request):
+    body = QueryDict(request.body)
+
+    if 'serverId' not in body:
+        return Response("The server id is required", status=400)
+
+    elif 'clientId' not in body:
+        return Response("The client id is required", status=400)
+
+    elif 'secret' not in body:
+        return Response("The client secret is required", status=400)
+
+    serverId = body['serverId']
+    clientId = body['clientId']
+    clientSecret = body['secret']
+
+    duplicate = Server.objects.filter(serverId=serverId).exists()
+    if duplicate:
+        # TODO do we replace the client id/secret?
+        return Response("This server already has an associated credential", status=400)
+
+    else:
+        # Create an entry representing the user trying to verify
+        Server.objects.create(
+            serverId=serverId,
+            clientId=clientId,
+            clientSecret=clientSecret,
+        )
+
+    return HttpResponse(status=200)
+
 
 @api_view(['GET'])
 def getRedirect(request):
@@ -21,6 +53,10 @@ def getRedirect(request):
     # Does not have a query
     if not serverQuery:
         return Response("The server id is required", status=400)
+
+    exist = Server.objects.filter(serverId=serverQuery).exists()
+    if !exist:
+        return Response("This server does not have associated credentials", status=400)
 
     # Grabs the required data about the server to generate the unique humanID link
     servers = Server.objects.get(serverId=serverQuery)
@@ -39,6 +75,9 @@ def getRedirect(request):
         'https://api.human-id.org/v1/server/users/web-login',
         headers=headers,
     )
+
+    if response.status != 200:
+        return Response("Unable to generate url. Please double check your credentials", status=403)
 
     resJson = response.json()['data']
     return_url = resJson['webLoginUrl']
@@ -67,7 +106,6 @@ def verifyAttempt(request):
         user.created = timezone.now()
         user.verified = False
         user.save()
-        return Response('done')
 
     else:
         # Create an entry representing the user trying to verify
@@ -77,7 +115,7 @@ def verifyAttempt(request):
             verified=False,
         )
 
-        return Response('done')
+    return Response(status=200)
 
 
 @api_view(['GET'])

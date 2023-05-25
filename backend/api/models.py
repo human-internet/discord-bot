@@ -2,8 +2,8 @@ from django.db import models
 
 class Server(models.Model):
     serverId     = models.TextField(null=False)
-    channelName  = models.TextField(null=False)
-    roleName     = models.TextField(null=False)
+    channelName  = models.TextField(null=False, default='get-verified')
+    roleName     = models.TextField(null=False, default='Verified')
     clientId     = models.TextField(null=False)
     clientSecret = models.TextField(null=False)
 
