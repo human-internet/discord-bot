@@ -83,13 +83,13 @@ async def verify(interaction: discord.Interaction):
         BACKEND_URL+'/api?serverId=' + serverId
     )
 
-    if response.status == 400:
+    if response.status_code == 400:
         await interaction.response.send_message(
             'This server does not have associated credentials. Please ask an admin to add this server from the humanID developer console.',
             ephemeral=True
         )
         return
-    elif response.status == 403:
+    elif response.status_code == 403:
         await interaction.response.send_message(
             'Invalid credentials associated with this server.',
             ephemeral=True

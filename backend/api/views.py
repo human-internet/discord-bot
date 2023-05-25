@@ -76,7 +76,7 @@ def getRedirect(request):
         headers=headers,
     )
 
-    if response.status != 200:
+    if response.status_code != 200:
         return Response("Unable to generate url. Please double check your credentials", status=403)
 
     resJson = response.json()['data']
