@@ -55,7 +55,7 @@ def getRedirect(request):
         return Response("The server id is required", status=400)
 
     exist = Server.objects.filter(serverId=serverQuery).exists()
-    if !exist:
+    if not exist:
         return Response("This server does not have associated credentials", status=400)
 
     # Grabs the required data about the server to generate the unique humanID link
