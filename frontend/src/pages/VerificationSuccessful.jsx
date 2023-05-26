@@ -24,7 +24,11 @@ function VerificationSuccessful() {
         setVerificationStatus('failed');
         resp.json().then((e) => {
           setErrorMessage(JSON.stringify(e) + `\nserverId=${server}`);
-        }).catch((e) => setErrorMessage("An error occurred."));
+        }).catch((e) => {
+	  if (!errorMessage) {
+	    setErrorMessage('An Error Occurred');
+	  }
+	});
       } else {
         setVerificationStatus('verified');
         localStorage.removeItem("server");

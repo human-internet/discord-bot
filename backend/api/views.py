@@ -217,6 +217,10 @@ def verification_successful(request):
     if response.status_code == 200:
         requestId = resJson['data']['requestId']
 
+        reqExist = Person.objects.filter(requestId=requestId).exists()
+        if not reqExist:
+            return Response("The server returned a request id of requestId, which does not match our records.", status=400)
+
         # success
         user = Person.objects.get(requestId=requestId)
         user.verified = True
