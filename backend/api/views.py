@@ -93,25 +93,28 @@ def getRedirect(request):
 
 @api_view(['PUT'])
 def verifyAttempt(request):
-    userQuery = request.query_params.get('requestId', None)  # unhash here?
+    userQuery = request.query_params.get('userId', None)  # unhash here?
+    reqQuery = request.query_params.get('requestId', None)  # unhash here?
 
     # Does not have a query
     if not userQuery:
         return Response("The user id is required", status=400)
 
-    duplicate = Person.objects.filter(requestId=userQuery).exists()
+    duplicate = Request.objects.filter(requestId=reqQuery).exists()
     if duplicate:
         # If the user has a duplicate entry, just update the created time
-        user = Person.objects.get(requestId=userQuery)
-        user.created = timezone.now()
-        user.verified = False
-        user.save()
+        req = Request.objects.get(requestId=reqQueryQ)
+        req.created  = timezone.now()
+        req.userId   = userQuery
+        req.verified = False
+        req.save()
 
     else:
         # Create an entry representing the user trying to verify
-        Person.objects.create(
+        Request.objects.create(
             requestId=userQuery,
             created=timezone.now(),
+            userId=userQuery,
             verified=False,
         )
 
@@ -126,22 +129,21 @@ def checkVerify(request):
         return Response("The user id is required", status=400)
 
     # entry with the given requestId doesnt exist
-    validAttempt = Person.objects.filter(requestId=userQuery).exists()
+    validAttempt = Request.objects.filter(requestId=userQuery).exists()
     if not validAttempt:
         return Response('No attempt matching the given request id.', status=404)
 
-    user       = Person.objects.get(requestId=userQuery)
+    req       = Request.objects.get(requestId=userQuery)
     status     = None
-    serializer = PersonSerializer(user, many=False).data
+    serializer = RequestSerializer(req, many=False).data
     created    = (datetime.fromisoformat(serializer['created']
                                       .replace('T', ' ')
                                       .replace('Z', '')))
 
     if created - datetime.now() < timedelta(minutes=5) and serializer['verified']:
         # If the attempt to verify was within a 5 minute time frame
-        user = Person.objects.get(requestId=userQuery)
-        user.verified = False
-        user.save()
+        req.verified = False
+        req.save()
         status = 200
 
     elif created - datetime.now() < timedelta(minutes=5) and not serializer['verified']:
@@ -164,12 +166,12 @@ def closeVerify(request):
         return Response("The request id is required", status=400)
 
     # entry with the given requestId doesnt exist
-    validAttempt = Person.objects.filter(requestId=userQuery).exists()
+    validAttempt = Request.objects.filter(requestId=userQuery).exists()
     if not validAttempt:
         return Response('No attempt matching the given request id.', status=404)
 
-    user = Person.objects.get(requestId=userQuery)
-    user.delete()
+    req = Request.objects.get(requestId=userQuery)
+    req.delete()
 
     return Response(status=200)
 
@@ -213,16 +215,32 @@ def verification_successful(request):
     )
 
     resJson = response.json()
-
-    if response.status_code == 200:
-        requestId = resJson['data']['requestId']
-
-        # success
-        user = Person.objects.get(requestId=requestId)
-        user.verified = True
-        user.save()
-
-        return Response(status=200)
-    else:
+    if response.status_code != 200:
         # fail
         return Response(resJson, status=400)
+
+
+    requestId = resJson['data']['requestId']
+    humanUserId = resJson['data']['appUserId']
+
+    # check if the humanID user already has an associated account for the server
+    associatedAccount = Person.objects.filter(humanUserId=humanUserId).exists()
+    req = Request.objects.get(requestId=requestId)
+    if associatedAccount and req.userId != associatedAccount.userId:
+        return Response(
+            'The provided credentials are already associated with another user in the server with the server id {}'.format(serverQuery),
+            status=409
+        )
+
+    elif not associatedAccount:
+        # associate the humanID user with their discord id
+        Person.objects.create(
+            humanUserId=humanUserId,
+            userId=req.userId,
+        )
+
+    # success
+    req.verified = True
+    req.save()
+
+    return Response(status=200)

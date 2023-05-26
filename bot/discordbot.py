@@ -103,7 +103,7 @@ async def verify(interaction: discord.Interaction):
 
     # Creates a db entry for the user to keep track of the link timeout
     requests.put(
-        BACKEND_URL + '/api/start/?requestId={}'.format(requestId)
+        BACKEND_URL + '/api/start/?requestId={}&userId={}'.format(requestId, userId)
     )
 
 

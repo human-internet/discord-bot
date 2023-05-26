@@ -10,3 +10,8 @@ class PersonSerializer(ModelSerializer):
     class Meta:
         model = Person
         fields = '__all__'
+
+class RequestSerializer(ModelSerializer):
+    class Meta:
+        model = Request
+        fields = '__all__'
