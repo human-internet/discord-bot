@@ -223,6 +223,11 @@ def verification_successful(request):
     requestId = resJson['data']['requestId']
     humanUserId = resJson['data']['appUserId']
 
+    # in case the request id doesnt exist
+    reqExist = Person.objects.filter(requestId=requestId).exists()
+    if not reqExist:
+        return Response("The server returned a request id of requestId, which does not match our records.", status=400)
+
     # check if the humanID user already has an associated account for the server
     associatedAccount = Person.objects.filter(humanUserId=humanUserId).exists()
     req = Request.objects.get(requestId=requestId)

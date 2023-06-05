@@ -60,7 +60,7 @@ async def on_guild_join(guild):
 async def verify(interaction: discord.Interaction):
     channels = discord.utils.get(interaction.guild.channels, name='logs')
     if not channels:
-        await interaction.guild.create_text_channel('logs')
+        channel = await interaction.guild.create_text_channel('logs')
 
     author   = interaction.user
     serverId = str(interaction.guild.id)
@@ -209,11 +209,13 @@ async def setup(interaction: discord.Interaction):
             discord.SelectOption(label='Categories', value='category'),
         ]
     )
-    view.add_item(d)
-    locked = discord.ui.Button(label='t')
-    view.add_item(locked)
-    locked = discord.ui.Button(label='test')
-    view.add_item(locked)
+
+    # code for buttons if wanted for QOL in the future TODO
+    # view.add_item(d)
+    # locked = discord.ui.Button(label='t')
+    # view.add_item(locked)
+    # locked = discord.ui.Button(label='test')
+    # view.add_item(locked)
 
     view.interaction_check = handleInteraction
     await interaction.response.send_message(
@@ -223,11 +225,11 @@ async def setup(interaction: discord.Interaction):
     )
 
 
-
 async def handleInteraction(interaction):
     origMessage = interaction.message
 
     if interaction.data['component_type'] == 2:
+        # button interaction
         print('button')
         return
 
@@ -282,8 +284,14 @@ async def handleInteraction(interaction):
             ]
         )
         view.add_item(d)
+        view.interaction_check = handleInteraction
         await interaction.response.edit_message(embed=embed, view=view)
 
+
+
+@bot.command('serverid')
+async def serverid(ctx):
+    await message.channel.send('The server id of this server is: {}'.format(ctx.guild.id))
 
 
 ###################################

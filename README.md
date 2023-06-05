@@ -1,23 +1,40 @@
-# discord-bot
+# Development Setup
 
-# Development
-#### Backend directory
-To start up the backend, ensure you have docker installed and runnning:
-  Note that servers will need to specify their client id and secret
-    There is one default server implemented in the backend (the discord test server)
-  1) cp .env.example .env (run once on setup only)
-  2) docker-compose up -d
-  3) python manage.py migrate (run once on setup only)
-  4) python manage.py runserver
+### Environment Variables
 
-#### Frontend directory
-To start up the frontend:
-  1) cp .env.example .env (run once on setup only)
-  2) npm install (run once on setup only)
-  3) npm start
+- You will need to rename the .env.example files in the bot, frontend, and backend directory
+    -  "*cp .env.example .env*" **or** "*mv .env.example .env*"
 
-#### Bot directory
-To start up the discord bot:
-  1) cp .env.example .env (run once on setup only)
-  2) pip install -r requirements.txt (run once on setup only)
-  3) python discordbot.py
+    - these hold information that will be required by the bot:
+        - backend url
+        - frontend url
+        - database information
+
+
+### Running the Bot
+- Note that you will need docker running (docker desktop) before running the command below.
+- Running the command "*docker-compose up --build -d*" in the root directory should start up everything needed to get the bot started
+    - You should have 4 docker images running on docker desktop after running the command
+
+
+# Directory Information
+
+### Backend
+- Has the information for the database and the api endpoints used to connect the frontend/discord bot to the database
+<br/> <br/>
+- The file *backend/api/views.py* has the information on what each endpoint does
+- The file *backend/api/urls.py* has the endpoint urls that will be used by the other components of the project
+- The file *backend/api/models.py* has the database table defintions
+    - If you make changes to the models, you will need to run the commands "*python manage.py makemigrations*" and "*python manage.py migrate*" to update the database
+
+
+
+### Frontend
+- Has the code for the frontend section of the discord bot
+- All relavent source files are in the directory *frontend/src/pages*
+
+
+### Bot
+- Has the code for the discord bot itself
+- The file "*bot/discordbot.py*" has the code for the discord bot
+- To start the bot by itself, you can run the command "*python discordbot.py*"
