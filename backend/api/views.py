@@ -8,10 +8,25 @@ from .serializers import *
 import requests
 import urllib.parse
 import environ
+import hashlib blake2b
+from hmac import compare_digest
 
 from datetime import datetime, timedelta
 
 env = environ.Env()
+
+# TODO TODO TODO SHOULD BE SECRET
+SECRET_KEY = b'pseudorandomly generated server secret key'
+AUTH_SIZE = 16
+
+def sign(userId):
+    h = blake2b(digest_size=AUTH_SIZE, key=SECRET_KEY)
+    h.update(userId)
+    return h.hexdigest().encode('utf-8')
+
+def verify(userId, storedId):
+    return compare_digest(cmpId, storedId)
+
 
 @api_view(['PUT'])
 def addServer(request):
@@ -48,7 +63,7 @@ def addServer(request):
 
 @api_view(['GET'])
 def getRedirect(request):
-    serverQuery = request.query_params.get('serverId', None)  # unhash here?
+    serverQuery = request.query_params.get('serverId', None)
 
     # Does not have a query
     if not serverQuery:
@@ -93,8 +108,8 @@ def getRedirect(request):
 
 @api_view(['PUT'])
 def verifyAttempt(request):
-    userQuery = request.query_params.get('userId', None)  # unhash here?
-    reqQuery = request.query_params.get('requestId', None)  # unhash here?
+    userQuery = request.query_params.get('userId', None)
+    reqQuery = request.query_params.get('requestId', None)
 
     # Does not have a query
     if not userQuery:
@@ -105,7 +120,7 @@ def verifyAttempt(request):
         # If the user has a duplicate entry, just update the created time
         req = Request.objects.get(requestId=reqQueryQ)
         req.created  = timezone.now()
-        req.userId   = userQuery
+        req.userId   = sign(bytes(str(userQuery), 'utf-8'))
         req.verified = False
         req.save()
 
@@ -114,7 +129,7 @@ def verifyAttempt(request):
         Request.objects.create(
             requestId=userQuery,
             created=timezone.now(),
-            userId=userQuery,
+            userId=sign(bytes(str(userQuery), 'utf-8'))
             verified=False,
         )
 
@@ -123,7 +138,7 @@ def verifyAttempt(request):
 
 @api_view(['GET'])
 def checkVerify(request):
-    userQuery = request.query_params.get('requestId', None)  # unhash here?
+    userQuery = request.query_params.get('requestId', None)
     # Does not have a query
     if not userQuery:
         return Response("The user id is required", status=400)
@@ -159,7 +174,7 @@ def checkVerify(request):
 
 @api_view(['DELETE'])
 def closeVerify(request):
-    userQuery = request.query_params.get('requestId', None)  # unhash here?
+    userQuery = request.query_params.get('requestId', None)
 
     # Does not have a query
     if not userQuery:
@@ -179,7 +194,7 @@ def closeVerify(request):
 
 @api_view(['GET'])
 def verification_successful(request):
-    serverQuery = request.query_params.get('serverId', None)  # unhash here?
+    serverQuery = request.query_params.get('serverId', None)
     exchangeToken = request.query_params.get('et')
 
     if not serverQuery:
@@ -231,7 +246,7 @@ def verification_successful(request):
     # check if the humanID user already has an associated account for the server
     associatedAccount = Person.objects.filter(humanUserId=humanUserId).exists()
     req = Request.objects.get(requestId=requestId)
-    if associatedAccount and req.userId != associatedAccount.userId:
+    if associatedAccount and !verify(req.userId, associatedAccount.userId):
         return Response(
             'The provided credentials are already associated with another user in the server with the server id {}'.format(serverQuery),
             status=409
