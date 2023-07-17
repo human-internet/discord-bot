@@ -97,9 +97,13 @@ DATABASES = {
         'USER': env('PYTHON_DB_USER'),
         'PASSWORD': env('PYTHON_DB_PASSWORD'),
         'HOST': env('PYTHON_DB_HOST'),
+        # 'HOST': 'postgres',
         'PORT': env('PYTHON_DB_PORT')
     }
 }
+
+print('DB_Host: ', env('PYTHON_DB_HOST'))
+print('DB_Port: ', env('PYTHON_DB_PORT'))
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators

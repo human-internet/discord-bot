@@ -8,8 +8,6 @@ from discord import Webhook
 import requests
 import pyshorteners as ps
 import aiohttp
-import requests
-import pyshorteners as ps
 from dotenv import dotenv_values
 
 # load the environment variables
@@ -17,8 +15,8 @@ env = dotenv_values()
 
 
 # Will need to move this somewhere other than a source file in the future
-TOKEN = 'MTA1MjczNjg1NDM2Mjk0NzcwNA.GGb4vM.UzAaoxUGySjvAVPLarupHTePKUyhI8ChOjYzvg'
-
+# TOKEN = 'MTA1MjczNjg1NDM2Mjk0NzcwNA.GGb4vM.UzAaoxUGySjvAVPLarupHTePKUyhI8ChOjYzvg'
+TOKEN = 'MTExMzUxMjQzNjkzOTYzNjg4Nw.GUe2Ce.g9omA2qwWG77qMmTmEnLoUoYmBb08oUD1zOncQ'
 # may want to limit the intents in the future
 intents = discord.Intents.all()
 
@@ -36,7 +34,12 @@ tree = app_commands.CommandTree(client)
 @bot.event
 async def on_ready():
     print("Logged in as {0.user}".format(bot))
-
+    print("Bot is Up and Ready!")
+    try:
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} command(s)")
+    except Exception as e:
+        print(e)
 
 # Goal is to automatically create the verified role and get-verified channel when
 # joining a server
@@ -54,10 +57,21 @@ async def on_guild_join(guild):
     channels = discord.utils.get(guild.channels, name='get-verified')
     await channels.send('By using the ‘/verify’ command, you can start the humanID verification process.')
 
+# test simple slash command
+@bot.tree.command(name="hello")
+async def hello(interaction: discord.Interaction):
+    # await interaction.response.send_message("Hello World")
+    print("Test hello")
+    await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!"
+                                            ,ephemeral=True)
+
 
 # Catches the /verify slash command
 @bot.tree.command(name='verify')
 async def verify(interaction: discord.Interaction):
+    print("Test Verify")
+    # return
+
     channels = discord.utils.get(interaction.guild.channels, name='logs')
     if not channels:
         channel = await interaction.guild.create_text_channel('logs')
@@ -65,6 +79,9 @@ async def verify(interaction: discord.Interaction):
     author   = interaction.user
     serverId = str(interaction.guild.id)
     userId   = str(author.id)
+
+    print("ServerID: ", serverId)
+    print("UserID: ", userId)
 
     if interaction.channel.name != 'get-verified':
         # message was not sent in the allowed channel
@@ -77,11 +94,19 @@ async def verify(interaction: discord.Interaction):
 
     BACKEND_URL = env["DISCORD_BACKEND_URL"]
     FRONTEND_URL = env["DISCORD_FRONTEND_URL"]
+    print("Backend URL: ", BACKEND_URL)
 
+    # await interaction.response.send_message(
+    #         # 'This server does not have associated credentials. Please ask an admin to add this server from the humanID developer console.',
+    #         BACKEND_URL,
+    #         ephemeral=True
+    #     )
+    # return
     # Gets the link to humanID
     response = requests.get(
         BACKEND_URL+'/api?serverId=' + serverId
     )
+    print("response: ", response)
 
     if response.status_code == 400:
         await interaction.response.send_message(
@@ -100,6 +125,7 @@ async def verify(interaction: discord.Interaction):
     resJson   = response.json()
     requestId = resJson['requestId']
     url       = resJson['url']
+    print("RequestID: ", requestId)
 
     # Creates a db entry for the user to keep track of the link timeout
     requests.put(
