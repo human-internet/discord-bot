@@ -155,13 +155,13 @@ def checkVerify(request):
                                       .replace('T', ' ')
                                       .replace('Z', '')))
 
-    if created - datetime.now() < timedelta(minutes=5) and serializer['verified']:
+    if created - datetime.now() < timedelta(minutes=10) and serializer['verified']:
         # If the attempt to verify was within a 5 minute time frame
         req.verified = False
         req.save()
         status = 200
 
-    elif created - datetime.now() < timedelta(minutes=5) and not serializer['verified']:
+    elif created - datetime.now() < timedelta(minutes=10) and not serializer['verified']:
         # Verification still in progress without timeout
         status = 202
 
@@ -239,7 +239,7 @@ def verification_successful(request):
     humanUserId = resJson['data']['appUserId']
 
     # in case the request id doesnt exist
-    reqExist = Person.objects.filter(requestId=requestId).exists()
+    reqExist = Request.objects.filter(requestId=requestId).exists()
     if not reqExist:
         return Response("The server returned a request id of requestId, which does not match our records.", status=400)
 
