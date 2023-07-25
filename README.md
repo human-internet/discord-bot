@@ -14,7 +14,7 @@
 ### Running the Bot
 - Note that you will need docker running (docker desktop) before running the command below.
 - Running the command "*docker-compose up --build -d*" in the root directory should start up everything needed to get the bot started
-    - You should have 4 docker images running on docker desktop after running the command
+    - You should have 4 docker images running on docker desktop after running the command 
 
 
 # Directory Information
@@ -25,7 +25,12 @@
 - The file *backend/api/views.py* has the information on what each endpoint does
 - The file *backend/api/urls.py* has the endpoint urls that will be used by the other components of the project
 - The file *backend/api/models.py* has the database table defintions
-    - If you make changes to the models, you will need to run the commands "*python manage.py makemigrations*" and "*python manage.py migrate*" to update the database
+    - If you make changes to the models, you will need to run the commands `$ python manage.py makemigrations` and `$ python manage.py migrate` to update the database
+    - If you are using docker
+      - Enter into the container `$ docker exec -it backend /bin/sh` or `$ docker exec -it {CONTAINER_ID} /bin/sh`
+      - You can get the container id by typing `$ docker ps`
+      - Run the commands above
+      - Type `exit` to exit the container shell
 
 
 

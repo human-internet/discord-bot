@@ -8,7 +8,7 @@ from .serializers import *
 import requests
 import urllib.parse
 import environ
-import hashlib blake2b
+from hashlib import blake2b
 from hmac import compare_digest
 
 from datetime import datetime, timedelta
@@ -118,7 +118,7 @@ def verifyAttempt(request):
     duplicate = Request.objects.filter(requestId=reqQuery).exists()
     if duplicate:
         # If the user has a duplicate entry, just update the created time
-        req = Request.objects.get(requestId=reqQueryQ)
+        req = Request.objects.get(requestId=reqQuery)
         req.created  = timezone.now()
         req.userId   = sign(bytes(str(userQuery), 'utf-8'))
         req.verified = False
@@ -129,7 +129,7 @@ def verifyAttempt(request):
         Request.objects.create(
             requestId=userQuery,
             created=timezone.now(),
-            userId=sign(bytes(str(userQuery), 'utf-8'))
+            userId=sign(bytes(str(userQuery), 'utf-8')),
             verified=False,
         )
 
@@ -246,7 +246,7 @@ def verification_successful(request):
     # check if the humanID user already has an associated account for the server
     associatedAccount = Person.objects.filter(humanUserId=humanUserId).exists()
     req = Request.objects.get(requestId=requestId)
-    if associatedAccount and !verify(req.userId, associatedAccount.userId):
+    if associatedAccount and not verify(req.userId, associatedAccount.userId):
         return Response(
             'The provided credentials are already associated with another user in the server with the server id {}'.format(serverQuery),
             status=409
