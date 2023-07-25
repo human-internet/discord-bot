@@ -43,6 +43,8 @@ services:
       POSTGRES_DB: tn146
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     networks:
