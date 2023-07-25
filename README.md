@@ -2,7 +2,7 @@
 
 ### Environment Variables
 
-- You will need to rename the .env.example files in the bot, frontend, and backend directory
+- You will need to COPY and RENAME the .env.example files in the bot, frontend, and backend directory
     -  "*cp .env.example .env*"
 
     - these hold information that will be required by the bot:
