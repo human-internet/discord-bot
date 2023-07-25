@@ -13,22 +13,21 @@ from dotenv import dotenv_values
 # load the environment variables
 env = dotenv_values()
 
-
 # Will need to move this somewhere other than a source file in the future
-# TOKEN = 'MTA1MjczNjg1NDM2Mjk0NzcwNA.GGb4vM.UzAaoxUGySjvAVPLarupHTePKUyhI8ChOjYzvg'
-TOKEN = 'MTExMzUxMjQzNjkzOTYzNjg4Nw.GUe2Ce.g9omA2qwWG77qMmTmEnLoUoYmBb08oUD1zOncQ'
+TOKEN = env['DISCORD_TOKEN']
 # may want to limit the intents in the future
 intents = discord.Intents.all()
 
 # bot (subclass of the discord client class)
 bot = commands.Bot(
-        command_prefix='!',
-        case_insensitive=True,
-        intents=intents
-    )
+    command_prefix='!',
+    case_insensitive=True,
+    intents=intents
+)
 
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
+
 
 # ensures the bot is working/connected
 @bot.event
@@ -40,6 +39,7 @@ async def on_ready():
         print(f"Synced {len(synced)} command(s)")
     except Exception as e:
         print(e)
+
 
 # Goal is to automatically create the verified role and get-verified channel when
 # joining a server
@@ -57,13 +57,14 @@ async def on_guild_join(guild):
     channels = discord.utils.get(guild.channels, name='get-verified')
     await channels.send('By using the ‘/verify’ command, you can start the humanID verification process.')
 
+
 # test simple slash command
 @bot.tree.command(name="hello")
 async def hello(interaction: discord.Interaction):
     # await interaction.response.send_message("Hello World")
     print("Test hello")
     await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!"
-                                            ,ephemeral=True)
+                                            , ephemeral=True)
 
 
 # Catches the /verify slash command
@@ -76,9 +77,9 @@ async def verify(interaction: discord.Interaction):
     if not channels:
         channel = await interaction.guild.create_text_channel('logs')
 
-    author   = interaction.user
+    author = interaction.user
     serverId = str(interaction.guild.id)
-    userId   = str(author.id)
+    userId = str(author.id)
 
     print("ServerID: ", serverId)
     print("UserID: ", userId)
@@ -104,7 +105,7 @@ async def verify(interaction: discord.Interaction):
     # return
     # Gets the link to humanID
     response = requests.get(
-        BACKEND_URL+'/api?serverId=' + serverId
+        BACKEND_URL + '/api?serverId=' + serverId
     )
     print("response: ", response)
 
@@ -121,17 +122,15 @@ async def verify(interaction: discord.Interaction):
         )
         return
 
-
-    resJson   = response.json()
+    resJson = response.json()
     requestId = resJson['requestId']
-    url       = resJson['url']
+    url = resJson['url']
     print("RequestID: ", requestId)
 
     # Creates a db entry for the user to keep track of the link timeout
     requests.put(
         BACKEND_URL + '/api/start/?requestId={}&userId={}'.format(requestId, userId)
     )
-
 
     # hash id here TODO
     hashedId = userId;
@@ -144,7 +143,6 @@ async def verify(interaction: discord.Interaction):
         ),
         ephemeral=True
     )
-
 
     success = False
     outcome = 'Failed to verify your identity. Please try again.'
@@ -176,9 +174,7 @@ async def verify(interaction: discord.Interaction):
         await author.add_roles(roles)
         outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
 
-
     await interaction.edit_original_response(content=outcome)
-
 
     # log verification attempt into the log channel
     currentTime = time.gmtime(time.time())
@@ -272,7 +268,6 @@ async def handleInteraction(interaction):
             channelType = discord.ChannelType.category
             maxSize = len(interaction.guild.categories)
 
-
         chooseChannel = discord.ui.ChannelSelect(
             channel_types=[channelType],
             max_values=maxSize,
@@ -294,7 +289,6 @@ async def handleInteraction(interaction):
             await channel.set_permissions(verifiedRole, read_messages=True, send_messages=True)
             await channel.set_permissions(everyone, read_messages=False, send_messages=False)
 
-
         view = discord.ui.View()
         embed = discord.Embed(
             title='Successfully locked {} channel(s)'.format(len(chosen)),
@@ -314,7 +308,6 @@ async def handleInteraction(interaction):
         await interaction.response.edit_message(embed=embed, view=view)
 
 
-
 @bot.command('serverid')
 async def serverid(ctx):
     await message.channel.send('The server id of this server is: {}'.format(ctx.guild.id))
@@ -329,10 +322,10 @@ async def serverid(ctx):
 async def log(ctx):
     channels = await ctx.guild.fetch_channels()
 
+
 # Should be a slash command, which might be why "This Interaction Failed" error is there
 @bot.command('test')
 async def test(ctx):
-
     message = ctx.message
     embed = discord.Embed(
         title='Verify Attempt',
@@ -355,6 +348,7 @@ async def test(ctx):
 
     view.interaction_check = handleInteraction
     # await message.channel.send(embed=embed, view=view)
+
 
 @bot.event
 async def on_interaction(interaction):
