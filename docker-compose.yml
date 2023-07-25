@@ -1,0 +1,53 @@
+version: '3.7'
+services:
+  bot:
+    container_name: discord_bot
+    build:
+      context: ./bot
+      dockerfile: dockerfile
+    env_file:
+      - ./bot/.env
+    networks:
+      - human_id
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: dockerfile
+    env_file:
+      - ./frontend/.env
+    ports:
+      - "3000:3000"
+    networks:
+      - human_id
+
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    networks:
+      - human_id
+
+  postgres:
+    container_name: postgres
+    image: postgres
+    environment:
+      POSTGRES_DB: tn146
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - human_id
+
+networks:
+  human_id:
+    driver: bridge
