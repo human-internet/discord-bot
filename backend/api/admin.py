@@ -3,3 +3,4 @@ from . models import *
 
 admin.site.register(Server)
 admin.site.register(Person)
+admin.site.register(Request)
