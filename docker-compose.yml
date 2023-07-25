@@ -9,6 +9,8 @@ services:
       - ./bot/.env
     networks:
       - human_id
+    volumes:
+      - ./bot/discordbot.py:/bot/discordbot.py
 
   frontend:
     container_name: frontend
@@ -21,6 +23,8 @@ services:
       - "3000:3000"
     networks:
       - human_id
+    volumes:
+      - ./frontend/src:/app/src
 
   backend:
     container_name: backend
@@ -35,16 +39,20 @@ services:
       - postgres
     networks:
       - human_id
+    volumes:
+      - ./backend/api:/code/api
+      - ./backend/backend:/code/backend
+      - ./backend/sql:/code/sql
 
   postgres:
     container_name: postgres
     image: postgres
-    environment:
-      POSTGRES_DB: tn146
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     networks:
