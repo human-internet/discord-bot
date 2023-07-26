@@ -36,6 +36,7 @@ DEBUG = bool(env('PYTHON_DEBUG'))
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = ['https://api.discord.human-id.org']
 
 # Application definition
 
