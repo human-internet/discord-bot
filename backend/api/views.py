@@ -78,7 +78,8 @@ def getRedirect(request):
     serializer = ServerSerializer(servers, many=False).data
     CLIENT_ID = serializer['clientId']
     CLIENT_SECRET = serializer['clientSecret']
-
+    print("Client ID: " + CLIENT_ID)
+    print("Client Secret: " + CLIENT_SECRET)
     headers = {
         'client-id': CLIENT_ID,
         'client-secret': CLIENT_SECRET,
@@ -90,7 +91,7 @@ def getRedirect(request):
         'https://api.human-id.org/v1/server/users/web-login',
         headers=headers,
     )
-
+    print(response.json())
     if response.status_code != 200:
         return Response("Unable to generate url. Please double check your credentials", status=403)
 
@@ -245,8 +246,9 @@ def verification_successful(request):
 
     # check if the humanID user already has an associated account for the server
     associatedAccount = Person.objects.filter(humanUserId=humanUserId).exists()
+    associatedAccountUser = Person.objects.filter(humanUserId=humanUserId).first()
     req = Request.objects.get(requestId=requestId)
-    if associatedAccount and not verify(req.userId, associatedAccount.userId):
+    if associatedAccount and not verify(req.userId, associatedAccountUser.userId):
         return Response(
             'The provided credentials are already associated with another user in the server with the server id {}'.format(serverQuery),
             status=409
