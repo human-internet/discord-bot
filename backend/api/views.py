@@ -25,7 +25,7 @@ def sign(userId):
     return h.hexdigest().encode('utf-8')
 
 def verify(userId, storedId):
-    return compare_digest(cmpId, storedId)
+    return compare_digest(userId, storedId)
 
 
 @api_view(['PUT'])
