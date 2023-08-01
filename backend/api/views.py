@@ -25,7 +25,7 @@ def sign(userId):
     return h.hexdigest().encode('utf-8')
 
 def verify(userId, storedId):
-    return compare_digest(cmpId, storedId)
+    return compare_digest(userId, storedId)
 
 
 @api_view(['PUT'])
@@ -90,7 +90,6 @@ def getRedirect(request):
         'https://api.human-id.org/v1/server/users/web-login',
         headers=headers,
     )
-
     if response.status_code != 200:
         return Response("Unable to generate url. Please double check your credentials", status=403)
 
@@ -237,23 +236,24 @@ def verification_successful(request):
 
     requestId = resJson['data']['requestId']
     humanUserId = resJson['data']['appUserId']
-
-    # in case the request id doesnt exist
+    # In case the request id doesnt exist
     reqExist = Request.objects.filter(requestId=requestId).exists()
     if not reqExist:
         return Response("The server returned a request id of requestId, which does not match our records.", status=400)
 
-    # check if the humanID user already has an associated account for the server
+    # Check if the discord userId from the request matches the one from the humanID server
+    # TODO: Check if every server creates different clientID
     associatedAccount = Person.objects.filter(humanUserId=humanUserId).exists()
+    associatedAccountUser = Person.objects.filter(humanUserId=humanUserId).first()
     req = Request.objects.get(requestId=requestId)
-    if associatedAccount and not verify(req.userId, associatedAccount.userId):
+    if associatedAccount and not verify(req.userId, associatedAccountUser.userId):
         return Response(
             'The provided credentials are already associated with another user in the server with the server id {}'.format(serverQuery),
             status=409
         )
 
     elif not associatedAccount:
-        # associate the humanID user with their discord id
+        # Associate the humanID user with their discord id
         Person.objects.create(
             humanUserId=humanUserId,
             userId=req.userId,
