@@ -40,9 +40,9 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-
-# Goal is to automatically create the verified role and get-verified channel when
-# joining a server
+# when joining a server
+# 1. Block all existing channels to everyone except for administrator
+# 2. automatically create the verified role and get-verified channel
 @bot.event
 async def on_guild_join(guild):
     print("Guild is Up and Ready!")
