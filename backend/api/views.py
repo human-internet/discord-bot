@@ -235,11 +235,7 @@ def verification_successful(request):
 
 
     requestId = resJson['data']['requestId']
-    print(requestId)
-
     humanUserId = resJson['data']['appUserId']
-    print(humanUserId)
-
     # In case the request id doesnt exist
     reqExist = Request.objects.filter(requestId=requestId).exists()
     if not reqExist:
