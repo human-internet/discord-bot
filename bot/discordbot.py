@@ -107,7 +107,7 @@ async def verify(interaction: discord.Interaction):
     response = requests.get(
         BACKEND_URL + '/api?serverId=' + serverId
     )
-    print("response: ", response)
+    print("response: ", response.text)
 
     if response.status_code == 400:
         await interaction.response.send_message(
