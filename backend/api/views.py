@@ -27,6 +27,13 @@ def sign(userId):
 def verify(userId, storedId):
     return compare_digest(cmpId, storedId)
 
+""" 
+1. Get the parameters sent in the body of the request
+2. Check that the parameters are valid (i.e. not empty)
+3. Check that the serverId is not already in the database
+4. If the serverId is not already in the database, insert it into the database
+5. Return an appropriate response to the request 
+"""
 
 @api_view(['PUT'])
 def addServer(request):
@@ -60,12 +67,19 @@ def addServer(request):
 
     return HttpResponse(status=200)
 
-
+"""
+1. Grabs the serverId from the request
+2. Checks if the serverId exists
+3. Grabs the clientId and clientSecret from the database
+4. Generate the weblogin url
+5. Generate the short url
+6. Send back the short url and the requestId to the frontend 
+"""
 @api_view(['GET'])
 def getRedirect(request):
     serverQuery = request.query_params.get('serverId', None)
 
-    # Does not have a query
+    # Case: does not have a query
     if not serverQuery:
         return Response("The server id is required", status=400)
 
@@ -104,13 +118,20 @@ def getRedirect(request):
         'requestId': requestId,
     })
 
-
+""" 
+1. Get the user id and request id from the request parameters
+2. Check if the user has a duplicate entry
+3. If the user has a duplicate entry, update the created time of the duplicate entry
+4. If the user does not have a duplicate entry, create a new entry
+5. Return a 200 response if successfully created/updated
+"""
 @api_view(['PUT'])
 def verifyAttempt(request):
     userQuery = request.query_params.get('userId', None)
     reqQuery = request.query_params.get('requestId', None)
-
-    # Does not have a query
+    serverId = request.query_params.get('serverId', None)
+    print("Server ID" + serverId)
+    # Case: request does not have a userId
     if not userQuery:
         return Response("The user id is required", status=400)
 
@@ -121,14 +142,17 @@ def verifyAttempt(request):
         req.created  = timezone.now()
         req.userId   = sign(bytes(str(userQuery), 'utf-8'))
         req.verified = False
+        req.serverId = serverId
         req.save()
 
     else:
         # Create an entry representing the user trying to verify
         Request.objects.create(
             requestId=reqQuery,
-            created=timezone.now(),
             userId=sign(bytes(str(userQuery), 'utf-8')),
+            #implemented new field
+            serverId = serverId,
+            created=timezone.now(),
             verified=False,
         )
 
@@ -137,12 +161,15 @@ def verifyAttempt(request):
 
 @api_view(['GET'])
 def checkVerify(request):
+    print("Debugging checkVerify")
+    # TODO: Check if the Discord Server ID is also present
+
     userQuery = request.query_params.get('requestId', None)
-    # Does not have a query
+    # Case: requestID is not present
     if not userQuery:
         return Response("The user id is required", status=400)
 
-    # entry with the given requestId doesnt exist
+    # Check if entry with the given requestId exists
     validAttempt = Request.objects.filter(requestId=userQuery).exists()
     if not validAttempt:
         return Response('No attempt matching the given request id.', status=404)
@@ -170,7 +197,14 @@ def checkVerify(request):
 
     return Response(status=status)
 
-
+"""
+1. Get the requestId from the query parameters in the request
+2. If there is no query parameter, return a 400 error
+3. If there is a query parameter, check if there is an entry in the database with that requestId
+4. If there is no entry, return a 404 error
+5. Otherwise, delete the entry from the database
+6. Return a 200 status code 
+"""
 @api_view(['DELETE'])
 def closeVerify(request):
     userQuery = request.query_params.get('requestId', None)
@@ -179,7 +213,7 @@ def closeVerify(request):
     if not userQuery:
         return Response("The request id is required", status=400)
 
-    # entry with the given requestId doesnt exist
+    # Check if entry with the given requestId exists
     validAttempt = Request.objects.filter(requestId=userQuery).exists()
     if not validAttempt:
         return Response('No attempt matching the given request id.', status=404)
@@ -190,7 +224,15 @@ def closeVerify(request):
     return Response(status=200)
 
 
-
+"""
+1. Checks if the serverId exists in the Server table.
+2. Checks if the exchange token is valid by sending a POST request to the humanID server
+3. Checks if the requestId of the exchange token matches our records
+4. Checks if the discord userId from the request matches the one from humanID
+5. Checks if a particular humanID user is already associated with a discord user, within the whole scope of the bot server
+6. If all the above conditions are met, then the humanID user is associated with their discord id
+7. The request is marked as verified 
+"""
 @api_view(['GET'])
 def verification_successful(request):
     serverQuery = request.query_params.get('serverId', None)
@@ -201,12 +243,11 @@ def verification_successful(request):
 
     if not exchangeToken:
         return Response("The exchange token is required", status=400)
-
+    
 
     exchangeToken = urllib.parse.unquote(exchangeToken)
-
-    exist = Server.objects.filter(serverId=serverQuery).exists()
-    if not exist:
+    serverExist = Server.objects.filter(serverId=serverQuery).exists()
+    if not serverExist:
         return Response("The server could not be found. Please try again.", status=400)
 
     # Grabs the required data about the server to generate the unique humanID link
@@ -214,20 +255,17 @@ def verification_successful(request):
     serializer = ServerSerializer(servers, many=False).data
     CLIENT_ID = serializer['clientId']
     CLIENT_SECRET = serializer['clientSecret']
-
     headers = {
         'client-id': CLIENT_ID,
         'client-secret': CLIENT_SECRET,
         'Content-Type': 'application/json'
     }
-
     # verify exchange token
     response = requests.post(
         'https://api.human-id.org/v1/server/users/exchange',
         headers=headers,
         json={"exchangeToken": exchangeToken.replace(" ", "+")}
     )
-
     resJson = response.json()
     if response.status_code != 200:
         # fail
@@ -236,29 +274,32 @@ def verification_successful(request):
 
     requestId = resJson['data']['requestId']
     humanUserId = resJson['data']['appUserId']
-    # In case the request id doesnt exist
+
+    # 3. Checks if the requestId of the exchange token matches our records
     reqExist = Request.objects.filter(requestId=requestId).exists()
     if not reqExist:
         return Response("The server returned a request id of requestId, which does not match our records.", status=400)
 
-    # Check if the discord userId from the request matches the one from the humanID server
-    # TODO: Check if every server creates different clientID
-    associatedAccount = Person.objects.filter(humanUserId=humanUserId).exists()
-    associatedAccountUser = Person.objects.filter(humanUserId=humanUserId).first()
-    req = Request.objects.get(requestId=requestId)
-    if associatedAccount and not verify(req.userId, associatedAccountUser.userId):
-        return Response(
-            'The provided credentials are already associated with another user in the server with the server id {}'.format(serverQuery),
-            status=409
-        )
 
-    elif not associatedAccount:
-        # Associate the humanID user with their discord id
+    # # Check if a particular humanID user is already associated with a discord user, within the scope of the bot server
+    associatedAccount = Person.objects.filter(humanUserId=humanUserId).exists()
+    associatedCredentialList = Person.objects.filter(humanUserId=humanUserId)
+    print(associatedCredentialList)
+    req = Request.objects.get(requestId=requestId)
+    if associatedAccount:
+        for associatedCredential in associatedCredentialList:
+            print(associatedCredential.serverId)
+            print(serverQuery)
+            if associatedCredential.serverId == serverQuery:
+                return Response(
+                    'The provided credentials are already associated with another user in the server with the server id {}'.format(serverQuery),
+                    status=409
+                )
         Person.objects.create(
             humanUserId=humanUserId,
             userId=req.userId,
+            serverId=serverQuery,
         )
-
     # success
     req.verified = True
     req.save()

@@ -12,14 +12,22 @@ function VerificationSuccessful() {
   const server = localStorage.getItem("server");
   const BACKEN_URL = process.env.REACT_APP_BACKEND_URL;
 
-
+  /* The code above does the following, explained in English:
+  1. It creates a function called continueVerification that takes in a parameter called exchangeToken
+  2. It sets the verificationStatus state to pending
+  3. It tries to send a request to the backend with the exchange token and the server ID
+  4. If the request returns a response code of 400 or above, it sets the verificationStatus state to failed and then displays the error response
+  5. If the request returns a response code of 200, it sets the verificationStatus state to verified and then redirects to the Discord server
+  6. If the request fails, it sets the verificationStatus state to failed and then displays an error message */
   const continueVerification = async (exchangeToken) => {
     setVerificationStatus('pending');
     try {
       if (verificationSent) {
         return;
       }
+      console.log('server: ', server)
       const resp = await fetch(BACKEN_URL + `/api/verification_successful/?&serverId=${server}&et=${exchangeToken}`);
+      console.log('verification_sucessful API response', resp);
       if (resp.status >= 400) {
         setVerificationStatus('failed');
         resp.json().then((e) => {

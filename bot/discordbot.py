@@ -129,7 +129,7 @@ async def verify(interaction: discord.Interaction):
 
     # Creates a db entry for the user to keep track of the link timeout
     requests.put(
-        BACKEND_URL + '/api/start/?requestId={}&userId={}'.format(requestId, userId)
+        BACKEND_URL + '/api/start/?requestId={}&userId={}&serverId={}'.format(requestId, userId, serverId)
     )
 
     # hash id here TODO
@@ -171,9 +171,9 @@ async def verify(interaction: discord.Interaction):
             BACKEND_URL + '/api/removeEntry/?requestId={}'.format(requestId)
         )
         roles = discord.utils.get(interaction.guild.roles, name='Verified')
+        print("roles: ", str(roles))
         await author.add_roles(roles)
         outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
-
     await interaction.edit_original_response(content=outcome)
 
     # log verification attempt into the log channel
