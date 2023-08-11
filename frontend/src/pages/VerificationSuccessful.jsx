@@ -9,6 +9,7 @@ function VerificationSuccessful() {
   const [errorMessage, setErrorMessage] = useState('')
 
   const exchangeToken = searchParams.get('et');
+  const discordServer = searchParams.get('serverId');
   const server = localStorage.getItem("server");
   const BACKEN_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -25,14 +26,14 @@ function VerificationSuccessful() {
       if (verificationSent) {
         return;
       }
-      console.log('server: ', server)
-      const resp = await fetch(BACKEN_URL + `/api/verification_successful/?&serverId=${server}&et=${exchangeToken}`);
-      console.log('verification_sucessful API response', resp);
+      const resp = await fetch(BACKEN_URL + `/api/verification_successful/?&serverId=${discordServer}&et=${exchangeToken}`);
+      // const data = await resp.json();
+      // console.log(data.message);
       if (resp.status >= 400) {
         setVerificationStatus('failed');
         resp.json().then((e) => {
-          setErrorMessage(JSON.stringify(e) + `\nserverId=${server}`);
-        }).catch((e) => {
+          setErrorMessage(e.message + `\nserverId=${server}`);
+        }).catch(() => {
           if (!errorMessage) {
             setErrorMessage('An Error Occurred');
           }
@@ -52,7 +53,7 @@ function VerificationSuccessful() {
 
   useEffect(() => {
     continueVerification(exchangeToken);
-  }, []);
+  });
 
   return (
     <header className="App-header">

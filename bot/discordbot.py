@@ -62,7 +62,9 @@ async def on_guild_join(guild):
 @bot.tree.command(name="hello")
 async def hello(interaction: discord.Interaction):
     # await interaction.response.send_message("Hello World")
+    print("roles: ", str(roles))
     print("Test hello")
+    
     await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!"
                                             , ephemeral=True)
 
@@ -170,6 +172,7 @@ async def verify(interaction: discord.Interaction):
         requests.delete(
             BACKEND_URL + '/api/removeEntry/?requestId={}'.format(requestId)
         )
+        
         roles = discord.utils.get(interaction.guild.roles, name='Verified')
         print("roles: ", str(roles))
         await author.add_roles(roles)

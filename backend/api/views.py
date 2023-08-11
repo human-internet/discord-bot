@@ -237,7 +237,7 @@ def closeVerify(request):
 def verification_successful(request):
     serverQuery = request.query_params.get('serverId', None)
     exchangeToken = request.query_params.get('et')
-
+    print("verification_successful being debugged")
     if not serverQuery:
         return Response("The server id is required", status=400)
 
@@ -295,6 +295,7 @@ def verification_successful(request):
                     'The provided credentials are already associated with another user in the server with the server id {}'.format(serverQuery),
                     status=409
                 )
+        print("Putting new person in database")
         Person.objects.create(
             humanUserId=humanUserId,
             userId=req.userId,
