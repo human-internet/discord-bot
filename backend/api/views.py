@@ -161,7 +161,6 @@ def verifyAttempt(request):
 
 @api_view(['GET'])
 def checkVerify(request):
-    print("Debugging checkVerify")
     # TODO: Check if the Discord Server ID is also present
 
     userQuery = request.query_params.get('requestId', None)
@@ -223,6 +222,21 @@ def closeVerify(request):
 
     return Response(status=200)
 
+# Check if a particular humanID user is already associated with a discord user, within the scope of the bot server
+def check_server_duplicate(humanUserId, serverQuery):
+    associatedAccount = Person.objects.filter(humanUserId=humanUserId).exists()
+    if associatedAccount:
+        associatedCredentialList = Person.objects.filter(humanUserId=humanUserId)
+        print(len(associatedCredentialList))
+        for associatedCredential in associatedCredentialList:
+            print(associatedCredential.serverId)
+            print(serverQuery)
+            if associatedCredential.serverId == serverQuery:
+                return True
+        return False
+    else:
+        return False
+
 
 """
 1. Checks if the serverId exists in the Server table.
@@ -278,31 +292,25 @@ def verification_successful(request):
     # 3. Checks if the requestId of the exchange token matches our records
     reqExist = Request.objects.filter(requestId=requestId).exists()
     if not reqExist:
-        return Response("The server returned a request id of requestId, which does not match our records.", status=400)
+        message = "The server returned a request id of {}, which does not match our records.".format(requestId)
+        return Response(message, status=400)
+    else:
+        req = Request.objects.get(requestId=requestId)
+        server_duplicate = check_server_duplicate(humanUserId, serverQuery)
+        if server_duplicate:
+            return Response(
+                'The provided credentials are already associated with another user in the server with the server id {}'.format(serverQuery), status=409)
+        else:
+            print("No Discord Server - humanID repeat, putting new person in database")
+            Person.objects.create(
+                humanUserId=humanUserId,
+                userId=req.userId,
+                serverId=serverQuery,
+            )
+            req.verified = True
+            req.save()      
+        # success
+        req.verified = True
+        req.save()
 
-
-    # # Check if a particular humanID user is already associated with a discord user, within the scope of the bot server
-    associatedAccount = Person.objects.filter(humanUserId=humanUserId).exists()
-    associatedCredentialList = Person.objects.filter(humanUserId=humanUserId)
-    print(associatedCredentialList)
-    req = Request.objects.get(requestId=requestId)
-    if associatedAccount:
-        for associatedCredential in associatedCredentialList:
-            print(associatedCredential.serverId)
-            print(serverQuery)
-            if associatedCredential.serverId == serverQuery:
-                return Response(
-                    'The provided credentials are already associated with another user in the server with the server id {}'.format(serverQuery),
-                    status=409
-                )
-        print("Putting new person in database")
-        Person.objects.create(
-            humanUserId=humanUserId,
-            userId=req.userId,
-            serverId=serverQuery,
-        )
-    # success
-    req.verified = True
-    req.save()
-
-    return Response(status=200)
+        return Response(status=200)

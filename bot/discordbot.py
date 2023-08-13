@@ -61,8 +61,6 @@ async def on_guild_join(guild):
 # test simple slash command
 @bot.tree.command(name="hello")
 async def hello(interaction: discord.Interaction):
-    # await interaction.response.send_message("Hello World")
-    print("roles: ", str(roles))
     print("Test hello")
     
     await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!"
@@ -174,7 +172,6 @@ async def verify(interaction: discord.Interaction):
         )
         
         roles = discord.utils.get(interaction.guild.roles, name='Verified')
-        print("roles: ", str(roles))
         await author.add_roles(roles)
         outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
     await interaction.edit_original_response(content=outcome)

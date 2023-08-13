@@ -9,7 +9,7 @@ function VerificationSuccessful() {
   const [errorMessage, setErrorMessage] = useState('')
 
   const exchangeToken = searchParams.get('et');
-  const discordServer = searchParams.get('serverId');
+  // const discordServer = searchParams.get('serverId');
   const server = localStorage.getItem("server");
   const BACKEN_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -21,12 +21,13 @@ function VerificationSuccessful() {
   5. If the request returns a response code of 200, it sets the verificationStatus state to verified and then redirects to the Discord server
   6. If the request fails, it sets the verificationStatus state to failed and then displays an error message */
   const continueVerification = async (exchangeToken) => {
+    console.log('The server variable: ' + server)
     setVerificationStatus('pending');
     try {
       if (verificationSent) {
         return;
       }
-      const resp = await fetch(BACKEN_URL + `/api/verification_successful/?&serverId=${discordServer}&et=${exchangeToken}`);
+      const resp = await fetch(BACKEN_URL + `/api/verification_successful/?&serverId=${server}&et=${exchangeToken}`);
       // const data = await resp.json();
       // console.log(data.message);
       if (resp.status >= 400) {
