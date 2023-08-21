@@ -5,8 +5,8 @@ import './Verification.css';
 function VerificationSuccessful() {
   const [searchParams] = useSearchParams();
   const [verificationStatus, setVerificationStatus] = useState('pending');
-  const [verificationSent, setVerificationSent] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('')
+  let verificationSent = false;
+  const [errorMessage, setErrorMessage] = useState('Error: ')
 
   const exchangeToken = searchParams.get('et');
   // const discordServer = searchParams.get('serverId');
@@ -21,40 +21,45 @@ function VerificationSuccessful() {
   5. If the request returns a response code of 200, it sets the verificationStatus state to verified and then redirects to the Discord server
   6. If the request fails, it sets the verificationStatus state to failed and then displays an error message */
   const continueVerification = async (exchangeToken) => {
-    console.log('The server variable: ' + server)
-    setVerificationStatus('pending');
-    try {
-      if (verificationSent) {
-        return;
-      }
-      const resp = await fetch(BACKEN_URL + `/api/verification_successful/?&serverId=${server}&et=${exchangeToken}`);
-      // const data = await resp.json();
-      // console.log(data.message);
-      if (resp.status >= 400) {
+    
+    if (!verificationSent) {
+      setVerificationStatus('pending');
+      console.log("Verification Sent: " + verificationSent)
+      verificationSent = true;
+      try {
+        const resp = await fetch(BACKEN_URL + `/api/verification_successful/?&serverId=${server}&et=${exchangeToken}`);
+        
+        console.log(resp.status);
+        if (resp.status >= 400) {
+          
+          resp.json()
+          .then((e) => {
+            const errString = JSON.stringify(e);
+            setErrorMessage(oldMessageObj => errString);
+            setVerificationStatus('failed');
+          }).catch(() => {
+            if (!errorMessage) {
+              setErrorMessage('An Error Occurred');
+            }
+          });
+        } else {
+          setVerificationStatus('verified');
+          localStorage.removeItem("server");
+          //window.close() TODO
+          window.location.replace('https://discord.com/channels/' + server);
+        }
+      } catch (e) {
         setVerificationStatus('failed');
-        resp.json().then((e) => {
-          setErrorMessage(e.message + `\nserverId=${server}`);
-        }).catch(() => {
-          if (!errorMessage) {
-            setErrorMessage('An Error Occurred');
-          }
-        });
-      } else {
-        setVerificationStatus('verified');
-        localStorage.removeItem("server");
-        //window.close() TODO
-        window.location.replace('https://discord.com/channels/' + server);
+        setErrorMessage("An error occurred.");
       }
-      setVerificationSent(true);
-    } catch (e) {
-      setVerificationStatus('failed');
-      setErrorMessage("An error occurred.");
+    } else {
+      return;
     }
   }
 
   useEffect(() => {
     continueVerification(exchangeToken);
-  });
+  }, []);
 
   return (
     <header className="App-header">
