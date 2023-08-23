@@ -24,12 +24,9 @@ function VerificationSuccessful() {
     
     if (!verificationSent) {
       setVerificationStatus('pending');
-      console.log("Verification Sent: " + verificationSent)
       verificationSent = true;
       try {
         const resp = await fetch(BACKEN_URL + `/api/verification_successful/?&serverId=${server}&et=${exchangeToken}`);
-        
-        console.log(resp.status);
         if (resp.status >= 400) {
           
           resp.json()
