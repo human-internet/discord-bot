@@ -25,7 +25,7 @@ def sign(userId):
     return h.hexdigest().encode('utf-8')
 
 def verify(userId, storedId):
-    return compare_digest(cmpId, storedId)
+    return compare_digest(userId, storedId)
 
 """ 
 1. Get the parameters sent in the body of the request
@@ -312,5 +312,4 @@ def verification_successful(request):
         # success
         req.verified = True
         req.save()
-
         return Response(status=200)
