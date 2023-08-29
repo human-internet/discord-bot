@@ -78,20 +78,31 @@ async def on_guild_join(guild):
 # test simple slash command
 @bot.tree.command(name="hello")
 async def hello(interaction: discord.Interaction):
-    guild = interaction.guild
-    bot_role = discord.utils.get(guild.roles, name=BOT_NAME)
-    if not bot_role:
-        await interaction.response.send_message('Cannot find the role for {}.'.format(BOT_NAME))
-        return
-    bot_position = bot_role.position
-    new_verify_position = bot_position - 2
-    verified_role = discord.utils.get(guild.roles, name='Verified') 
-    positions = {
-        verified_role: new_verify_position
-    }
-    new_positions = await guild.edit_role_positions(positions=positions)
-    for role in new_positions:
-        print(role.name, ': ', role.position)
+    author = interaction.user
+    roles = discord.utils.get(interaction.guild.roles, name='Verified')
+    if roles: 
+        try:
+            await author.add_roles(roles)
+            outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
+        except discord.Forbidden:
+            outcome = "I don't have the permission to add the Verified role, please contact the admin."
+        except discord.HTTPException as e:
+            outcome = "An error occurred while trying to add the Verified role: {}".format(e)
+    await interaction.response.send_message(content=outcome)
+    # guild = interaction.guild
+    # bot_role = discord.utils.get(guild.roles, name=BOT_NAME)
+    # if not bot_role:
+    #     await interaction.response.send_message('Cannot find the role for {}.'.format(BOT_NAME))
+    #     return
+    # bot_position = bot_role.position
+    # new_verify_position = bot_position - 2
+    # verified_role = discord.utils.get(guild.roles, name='Verified') 
+    # positions = {
+    #     verified_role: new_verify_position
+    # }
+    # new_positions = await guild.edit_role_positions(positions=positions)
+    # for role in new_positions:
+    #     print(role.name, ': ', role.position)
     await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!"
                                             , ephemeral=True)
 
@@ -169,6 +180,7 @@ async def verify(interaction: discord.Interaction):
 
     # 5 minute of pinging
     for timeout in range(100):
+        # Trying the await clause
         response = requests.get(
             BACKEND_URL + '/api/confirm/?requestId={}'.format(requestId),
         )
@@ -187,13 +199,18 @@ async def verify(interaction: discord.Interaction):
             break
 
     if success:
-        requests.delete(
-            BACKEND_URL + '/api/removeEntry/?requestId={}'.format(requestId)
-        )
-        
         roles = discord.utils.get(interaction.guild.roles, name='Verified')
-        await author.add_roles(roles)
-        outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
+        if roles: 
+            try:
+                await author.add_roles(roles)
+                outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
+                requests.delete(
+                    BACKEND_URL + '/api/removeEntry/?requestId={}'.format(requestId)
+                )
+            except discord.Forbidden:
+                outcome = "I don't have the permission to add the Verified role, please contact the admin."
+            except discord.HTTPException as e:
+                outcome = "An error occurred while trying to add the Verified role: {}".format(e)
     await interaction.edit_original_response(content=outcome)
 
     # log verification attempt into the log channel

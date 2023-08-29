@@ -181,7 +181,7 @@ def checkVerify(request):
 
     if created - datetime.now() < timedelta(minutes=10) and serializer['verified']:
         # If the attempt to verify was within a 5 minute time frame
-        req.verified = False
+        req.verified = True
         req.save()
         status = 200
 
@@ -293,18 +293,18 @@ def verification_successful(request):
         req = Request.objects.get(requestId=requestId)
         server_duplicate = check_server_duplicate(humanUserId, serverQuery)
         if server_duplicate:
-            return Response(
-                'The provided credentials are already associated with another user in the server with the server id {}'.format(serverQuery), status=409)
-        else:
-            # No Discord Server - humanID repeat, putting new person in database
-            Person.objects.create(
-                humanUserId=humanUserId,
-                userId=req.userId,
-                serverId=serverQuery,
-            )
             req.verified = True
-            req.save()      
-        # success
+            req.save()  
+            return Response(
+                'The provided credentials are already associated with another user in the server you are trying to verify for.',
+                status=400)
+            # No Discord Server - humanID repeat, putting new person in database
+        Person.objects.create(
+            humanUserId=humanUserId,
+            userId=req.userId,
+            serverId=serverQuery,
+        )
         req.verified = True
-        req.save()
+        req.save()      
+        # success
         return Response(status=200)

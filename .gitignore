@@ -3,4 +3,4 @@
 *.pyc
 postgres-data/
 .vscode/
-*.DS_Store
+**.DS_Store
