@@ -11,6 +11,8 @@ services:
       - human_id
     volumes:
       - ./bot/discordbot.py:/bot/discordbot.py
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   frontend:
     container_name: frontend
@@ -25,6 +27,8 @@ services:
       - human_id
     volumes:
       - ./frontend/src:/app/src
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   backend:
     container_name: backend
@@ -43,6 +47,8 @@ services:
       - ./backend/api:/code/api
       - ./backend/backend:/code/backend
       - ./backend/sql:/code/sql
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   postgres:
     container_name: postgres
