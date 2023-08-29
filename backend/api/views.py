@@ -293,8 +293,6 @@ def verification_successful(request):
         req = Request.objects.get(requestId=requestId)
         server_duplicate = check_server_duplicate(humanUserId, serverQuery)
         if server_duplicate:
-            req.verified = True
-            req.save()  
             return Response(
                 'The provided credentials are already associated with another user in the server you are trying to verify for.',
                 status=400)
