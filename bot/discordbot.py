@@ -49,46 +49,30 @@ async def on_ready():
 @bot.event
 async def on_guild_join(guild):
     print("Guild is Up and Ready!")
-    # print(guild.roles)
     everyone = discord.utils.get(guild.roles, name='@everyone')
-    # Getting the Verified Role
-    verified_role = discord.utils.get(guild.roles, name='Verified')
-
-    if not verified_role:
-        await guild.create_role(name='Verified')
-        print("The Verified role created in the guild")
-        verified_role = discord.utils.get(guild.roles, name='Verified')
     # only create the channel if it does not exist
     allchannels = guild.channels
-
     for channel in allchannels:
-        # print(channel)
         await channel.set_permissions(everyone, read_messages=False, send_messages=False)
-        # print("---------------block")
-
     channels = discord.utils.get(guild.channels, name='get-verified')
     if not channels:
         await guild.create_text_channel('get-verified')
-
     verification_channel = discord.utils.get(guild.channels, name='get-verified')
+    # Getting the Verified Role
+    verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
+    if not verified_role:
+        await guild.create_role(name='humanID-Verified')
+        await verification_channel.send("The 'humanID-Verified' role created in the Server.")
+        verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
+    await verification_channel.send('Please make sure the humanID-Verified role is ranked under the humanID Verification bot Role.')
     await verification_channel.send('By using the ‘/verify’ command, you can start the humanID verification process.')
-    await verification_channel.send('Please make sure the Verified role is ranked under the humanID Verification bot Role.')
 
 
 # test simple slash command
 @bot.tree.command(name="hello")
 async def hello(interaction: discord.Interaction):
-    author = interaction.user
-    roles = discord.utils.get(interaction.guild.roles, name='Verified')
-    if roles: 
-        try:
-            await author.add_roles(roles)
-            outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
-        except discord.Forbidden:
-            outcome = "I don't have the permission to add the Verified role, please contact the admin."
-        except discord.HTTPException as e:
-            outcome = "An error occurred while trying to add the Verified role: {}".format(e)
-    await interaction.response.send_message(content=outcome)
+    await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!"
+                                            , ephemeral=True)
     # guild = interaction.guild
     # bot_role = discord.utils.get(guild.roles, name=BOT_NAME)
     # if not bot_role:
@@ -103,8 +87,7 @@ async def hello(interaction: discord.Interaction):
     # new_positions = await guild.edit_role_positions(positions=positions)
     # for role in new_positions:
     #     print(role.name, ': ', role.position)
-    await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!"
-                                            , ephemeral=True)
+    
 
 
 # Catches the /verify slash command
@@ -199,7 +182,7 @@ async def verify(interaction: discord.Interaction):
             break
 
     if success:
-        roles = discord.utils.get(interaction.guild.roles, name='Verified')
+        roles = discord.utils.get(interaction.guild.roles, name='humanID-Verified')
         if roles: 
             try:
                 await author.add_roles(roles)
@@ -236,7 +219,7 @@ async def verify(interaction: discord.Interaction):
         url=author.display_avatar.url,
         icon_url=author.display_avatar.url
     )
-
+    channels = discord.utils.get(interaction.guild.channels, name='logs')
     await channels.send(embed=embed)
 
 #-----------------------------------Version 2 - Setup----------------------------------------
