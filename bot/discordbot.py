@@ -15,9 +15,9 @@ env = dotenv_values()
 
 # Will need to move this somewhere other than a source file in the future
 TOKEN = env['DISCORD_TOKEN']
-BOT_NAME = env['DISCORD_BOT_NAME']
 # may want to limit the intents in the future
 intents = discord.Intents.all()
+intents.members = True
 
 # bot (subclass of the discord client class)
 bot = commands.Bot(
@@ -34,61 +34,45 @@ tree = app_commands.CommandTree(client)
 @bot.event
 async def on_ready():
     print("Logged in as {0.user}".format(bot))
-    print("Bot is Up and Ready!")
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} command(s)")
     except Exception as e:
         print(e)
 
-
+@bot.event
+async def on_member_join(member):
+    # This function will be called when a new member joins the server
+    print(f'{member.name} has joined the server.')
+    await member.send(f"Hey {member.mention}, welcome to humanID Core team! Head on over to the get_verified channel to introduce yourself! Also, you might have noticed that you can't see your team's group chats. Don't panic! Once your onboarding process is complete, your team leader will assign you some roles/'tags', which will then grant you access to your team's specific group chats.")
 
 # when joining a server
 # 1. Block all existing channels to everyone except for administrator
 # 2. automatically create the verified role and get-verified channel
 @bot.event
 async def on_guild_join(guild):
-    print("Guild is Up and Ready!")
-    # print(guild.roles)
-    everyone = discord.utils.get(guild.roles, name='@everyone')
-    # Getting the Verified Role
-    verified_role = discord.utils.get(guild.roles, name='Verified')
-
-    if not verified_role:
-        await guild.create_role(name='Verified')
-        print("The Verified role created in the guild")
-        verified_role = discord.utils.get(guild.roles, name='Verified')
-    # only create the channel if it does not exist
-    allchannels = guild.channels
-
-    for channel in allchannels:
-        # print(channel)
-        await channel.set_permissions(everyone, read_messages=False, send_messages=False)
-        # print("---------------block")
-
     channels = discord.utils.get(guild.channels, name='get-verified')
+    # only create the channel if it does not exist
     if not channels:
         await guild.create_text_channel('get-verified')
-
-    verification_channel = discord.utils.get(guild.channels, name='get-verified')
+    verification_channel = discord.utils.get(guild.channels, name='get-verified')  
+    # Setting the @everyone role on all channels
+    everyone = discord.utils.get(guild.roles, name='@everyone')
+    allchannels = guild.channels
+    for channel in allchannels:
+        await channel.set_permissions(everyone, read_messages=False, send_messages=False)
+    # Getting the Verified Role
+    verified_role = discord.utils.get(guild.roles, name='Verified')
+    if verified_role:
+        await verification_channel.send('Pre-existing Verified Role Detected: Please make sure the Verified role is ranked under the humanID Verification bot Role.')
+    else:
+        await guild.create_role(name='Verified')
+        print("The Verified role created in this Discord Server")
     await verification_channel.send('By using the ‘/verify’ command, you can start the humanID verification process.')
-    await verification_channel.send('Please make sure the Verified role is ranked under the humanID Verification bot Role.')
-
 
 # test simple slash command
 @bot.tree.command(name="hello")
 async def hello(interaction: discord.Interaction):
-    author = interaction.user
-    roles = discord.utils.get(interaction.guild.roles, name='Verified')
-    if roles: 
-        try:
-            await author.add_roles(roles)
-            outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
-        except discord.Forbidden:
-            outcome = "I don't have the permission to add the Verified role, please contact the admin."
-        except discord.HTTPException as e:
-            outcome = "An error occurred while trying to add the Verified role: {}".format(e)
-    await interaction.response.send_message(content=outcome)
     # guild = interaction.guild
     # bot_role = discord.utils.get(guild.roles, name=BOT_NAME)
     # if not bot_role:
