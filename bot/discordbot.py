@@ -40,16 +40,29 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-
-# Goal is to automatically create the verified role and get-verified channel when
-# joining a server
+# when joining a server
+# 1. Block all existing channels to everyone except for administrator
+# 2. automatically create the verified role and get-verified channel
 @bot.event
 async def on_guild_join(guild):
+    print("Guild is Up and Ready!")
+    # print(guild.roles)
+    everyone = discord.utils.get(guild.roles, name='@everyone')
+    # print("everyone", everyone)
+
     roles = discord.utils.get(guild.roles, name='Verified')
     if not roles:
         await guild.create_role(name='Verified')
+    print("create a role!!")
 
     # only create the channel if it does not exist
+    allchannels = guild.channels
+
+    for channel in allchannels:
+        # print(channel)
+        await channel.set_permissions(everyone, read_messages=False, send_messages=False)
+        # print("---------------block")
+
     channels = discord.utils.get(guild.channels, name='get-verified')
     if not channels:
         await guild.create_text_channel('get-verified')
@@ -61,8 +74,6 @@ async def on_guild_join(guild):
 # test simple slash command
 @bot.tree.command(name="hello")
 async def hello(interaction: discord.Interaction):
-    # await interaction.response.send_message("Hello World")
-    print("Test hello")
     await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!"
                                             , ephemeral=True)
 
@@ -70,9 +81,6 @@ async def hello(interaction: discord.Interaction):
 # Catches the /verify slash command
 @bot.tree.command(name='verify')
 async def verify(interaction: discord.Interaction):
-    print("Test Verify")
-    # return
-
     channels = discord.utils.get(interaction.guild.channels, name='logs')
     if not channels:
         channel = await interaction.guild.create_text_channel('logs')
@@ -80,9 +88,6 @@ async def verify(interaction: discord.Interaction):
     author = interaction.user
     serverId = str(interaction.guild.id)
     userId = str(author.id)
-
-    print("ServerID: ", serverId)
-    print("UserID: ", userId)
 
     if interaction.channel.name != 'get-verified':
         # message was not sent in the allowed channel
@@ -95,7 +100,6 @@ async def verify(interaction: discord.Interaction):
 
     BACKEND_URL = env["DISCORD_BACKEND_URL"]
     FRONTEND_URL = env["DISCORD_FRONTEND_URL"]
-    print("Backend URL: ", BACKEND_URL)
 
     # await interaction.response.send_message(
     #         # 'This server does not have associated credentials. Please ask an admin to add this server from the humanID developer console.',
@@ -107,7 +111,6 @@ async def verify(interaction: discord.Interaction):
     response = requests.get(
         BACKEND_URL + '/api?serverId=' + serverId
     )
-    print("response: ", response)
 
     if response.status_code == 400:
         await interaction.response.send_message(
@@ -125,11 +128,10 @@ async def verify(interaction: discord.Interaction):
     resJson = response.json()
     requestId = resJson['requestId']
     url = resJson['url']
-    print("RequestID: ", requestId)
 
     # Creates a db entry for the user to keep track of the link timeout
     requests.put(
-        BACKEND_URL + '/api/start/?requestId={}&userId={}'.format(requestId, userId)
+        BACKEND_URL + '/api/start/?requestId={}&userId={}&serverId={}'.format(requestId, userId, serverId)
     )
 
     # hash id here TODO
@@ -170,10 +172,10 @@ async def verify(interaction: discord.Interaction):
         requests.delete(
             BACKEND_URL + '/api/removeEntry/?requestId={}'.format(requestId)
         )
+        
         roles = discord.utils.get(interaction.guild.roles, name='Verified')
         await author.add_roles(roles)
         outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
-
     await interaction.edit_original_response(content=outcome)
 
     # log verification attempt into the log channel
@@ -202,116 +204,116 @@ async def verify(interaction: discord.Interaction):
 
     await channels.send(embed=embed)
 
-
+#-----------------------------------Version 2 - Setup----------------------------------------
 # Sets up the configuration the admin would like
 # updates the verified role's name, get-verified channel name, and channel privacy settings
 # specify the settings via the parameters
-@bot.tree.command(name='setup')
-async def setup(interaction: discord.Interaction):
-    if not interaction.user.guild_permissions.administrator and False:
-        # only admins can run this commmand
-        await interaction.response.send_message(
-            'Access to the bot settings is only available to admins. Please contact an admin if you would like to change the settings.',
-            ephemeral=True
-        )
-        return
 
-    embed = discord.Embed(
-        title='Verify Attempt',
-        description='Status: {}'.format('Success'),
-        colour=discord.Colour.dark_gold(),
-    )
-    view = discord.ui.View()
-    # interaction.data gives the value after selecting an option
-    d = discord.ui.Select(
-        placeholder='temp TODO',
-        options=[
-            discord.SelectOption(label='Voice Channels', value='voice'),
-            discord.SelectOption(label='Text Channels', value='text'),
-            discord.SelectOption(label='Categories', value='category'),
-        ]
-    )
+# @bot.tree.command(name='setup')
+# async def setup(interaction: discord.Interaction):
+#     if not interaction.user.guild_permissions.administrator and False:
+#         # only admins can run this commmand
+#         await interaction.response.send_message(
+#             'Access to the bot settings is only available to admins. Please contact an admin if you would like to change the settings.',
+#             ephemeral=True
+#         )
+#         return
 
-    # code for buttons if wanted for QOL in the future TODO
-    # view.add_item(d)
-    # locked = discord.ui.Button(label='t')
-    # view.add_item(locked)
-    # locked = discord.ui.Button(label='test')
-    # view.add_item(locked)
+#     embed = discord.Embed(
+#         title='Verify Attempt',
+#         description='Status: {}'.format('Success'),
+#         colour=discord.Colour.dark_gold(),
+#     )
+#     view = discord.ui.View()
+#     # interaction.data gives the value after selecting an option
+#     d = discord.ui.Select(
+#         placeholder='temp TODO',
+#         options=[
+#             discord.SelectOption(label='Voice Channels', value='voice'),
+#             discord.SelectOption(label='Text Channels', value='text'),
+#             discord.SelectOption(label='Categories', value='category'),
+#         ]
+#     )
 
-    view.interaction_check = handleInteraction
-    await interaction.response.send_message(
-        embed=embed,
-        view=view,
-        ephemeral=True
-    )
+#     # code for buttons if wanted for QOL in the future TODO
+#     # view.add_item(d)
+#     # locked = discord.ui.Button(label='t')
+#     # view.add_item(locked)
+#     # locked = discord.ui.Button(label='test')
+#     # view.add_item(locked)
 
-
-async def handleInteraction(interaction):
-    origMessage = interaction.message
-
-    if interaction.data['component_type'] == 2:
-        # button interaction
-        print('button')
-        return
-
-    chosen = interaction.data['values']
-    if chosen[0] in ['text', 'voice', 'category']:
-        # setup choices for channel selection
-        channelType = discord.ChannelType.text
-        maxSize = len(interaction.guild.text_channels)
-        if chosen[0] == 'voice':
-            channelType = discord.ChannelType.voice
-            maxSize = len(interaction.guild.voice_channels)
-
-        elif chosen[0] == 'category':
-            channelType = discord.ChannelType.category
-            maxSize = len(interaction.guild.categories)
-
-        chooseChannel = discord.ui.ChannelSelect(
-            channel_types=[channelType],
-            max_values=maxSize,
-        )
-        view = discord.ui.View()
-        view.add_item(chooseChannel)
-        view.interaction_check = handleInteraction
-        await interaction.response.edit_message(view=view)
-
-    else:
-        # hide channel
-        updatedChannels = []
-        verifiedRole = discord.utils.get(origMessage.guild.roles, name='Verified')
-        everyone = discord.utils.get(origMessage.guild.roles, name='@everyone')
-        for channelId in chosen:
-            # removes perms for non-verified users for the chosen channels
-            channel = await origMessage.guild.fetch_channel(int(channelId))
-            updatedChannels.append(channel.name)
-            await channel.set_permissions(verifiedRole, read_messages=True, send_messages=True)
-            await channel.set_permissions(everyone, read_messages=False, send_messages=False)
-
-        view = discord.ui.View()
-        embed = discord.Embed(
-            title='Successfully locked {} channel(s)'.format(len(chosen)),
-            description=', '.join(updatedChannels),
-            colour=discord.Colour.dark_gold(),
-        )
-        d = discord.ui.Select(
-            placeholder='temp TODO',
-            options=[
-                discord.SelectOption(label='Voice Channels', value='voice'),
-                discord.SelectOption(label='Text Channels', value='text'),
-                discord.SelectOption(label='Categories', value='category'),
-            ]
-        )
-        view.add_item(d)
-        view.interaction_check = handleInteraction
-        await interaction.response.edit_message(embed=embed, view=view)
+#     view.interaction_check = handleInteraction
+#     await interaction.response.send_message(
+#         embed=embed,
+#         view=view,
+#         ephemeral=True
+#     )
 
 
-@bot.command('serverid')
-async def serverid(ctx):
-    await message.channel.send('The server id of this server is: {}'.format(ctx.guild.id))
+# async def handleInteraction(interaction):
+#     origMessage = interaction.message
 
+#     if interaction.data['component_type'] == 2:
+#         # button interaction
+#         print('button')
+#         return
+
+#     chosen = interaction.data['values']
+#     if chosen[0] in ['text', 'voice', 'category']:
+#         # setup choices for channel selection
+#         channelType = discord.ChannelType.text
+#         maxSize = len(interaction.guild.text_channels)
+#         if chosen[0] == 'voice':
+#             channelType = discord.ChannelType.voice
+#             maxSize = len(interaction.guild.voice_channels)
+
+#         elif chosen[0] == 'category':
+#             channelType = discord.ChannelType.category
+#             maxSize = len(interaction.guild.categories)
+
+#         chooseChannel = discord.ui.ChannelSelect(
+#             channel_types=[channelType],
+#             max_values=maxSize,
+#         )
+#         view = discord.ui.View()
+#         view.add_item(chooseChannel)
+#         view.interaction_check = handleInteraction
+#         await interaction.response.edit_message(view=view)
+
+#     else:
+#         # hide channel
+#         updatedChannels = []
+#         verifiedRole = discord.utils.get(origMessage.guild.roles, name='Verified')
+#         everyone = discord.utils.get(origMessage.guild.roles, name='@everyone')
+#         for channelId in chosen:
+#             # removes perms for non-verified users for the chosen channels
+#             channel = await origMessage.guild.fetch_channel(int(channelId))
+#             updatedChannels.append(channel.name)
+#             await channel.set_permissions(verifiedRole, read_messages=True, send_messages=True)
+#             await channel.set_permissions(everyone, read_messages=False, send_messages=False)
+
+#         view = discord.ui.View()
+#         embed = discord.Embed(
+#             title='Successfully locked {} channel(s)'.format(len(chosen)),
+#             description=', '.join(updatedChannels),
+#             colour=discord.Colour.dark_gold(),
+#         )
+#         d = discord.ui.Select(
+#             placeholder='temp TODO',
+#             options=[
+#                 discord.SelectOption(label='Voice Channels', value='voice'),
+#                 discord.SelectOption(label='Text Channels', value='text'),
+#                 discord.SelectOption(label='Categories', value='category'),
+#             ]
+#         )
+#         view.add_item(d)
+#         view.interaction_check = handleInteraction
+#         await interaction.response.edit_message(embed=embed, view=view)
+
+
+# @bot.command('serverid')
+# async def serverid(ctx):
+#     await message.channel.send('The server id of this server is: {}'.format(ctx.guild.id))
 
 ###################################
 # The commands below are currently only used for testing/development

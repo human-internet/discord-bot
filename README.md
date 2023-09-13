@@ -13,7 +13,7 @@
 
 ### Running the Bot
 - Note that you will need docker running (docker desktop) before running the command below.
-- Running the command "*docker-compose up --build -d*" in the root directory should start up everything needed to get the bot started
+- Running the command `docker-compose up --build -d` in the root directory should start up everything needed to get the bot started
     - You should have 4 docker images running on docker desktop after running the command 
 
 
