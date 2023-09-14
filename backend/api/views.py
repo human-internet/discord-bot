@@ -294,8 +294,8 @@ def verification_successful(request):
         server_duplicate = check_server_duplicate(humanUserId, serverQuery)
         if server_duplicate:
             return Response(
-                'The provided credentials are already associated with another user in the server you are trying to verify for.',
-                status=400)
+                'The provided credentials are already associated with another user in the server {}'
+                .format(serverQuery), status=409)
             # No Discord Server - humanID repeat, putting new person in database
         Person.objects.create(
             humanUserId=humanUserId,

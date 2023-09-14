@@ -44,7 +44,12 @@ async def on_ready():
 async def on_member_join(member):
     # This function will be called when a new member joins the server
     print(f'{member.name} has joined the server.')
-    await member.send(f"Hey {member.mention}, welcome to humanID Core team! Head on over to the get_verified channel to introduce yourself! Also, you might have noticed that you can't see your team's group chats. Don't panic! Once your onboarding process is complete, your team leader will assign you some roles/'tags', which will then grant you access to your team's specific group chats.")
+    # Sends the member a welcome message that mentions the server name and the member
+    server_name = member.guild.name
+    await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We're thrilled to have you here. To get started, please head over to the 'get_verified' channel to complete the verification process.\n
+Our verification is a quick and simple step that ensures you have access to various features on our Discord server. Don't worry, it's easy! Once you've completed the verification process, you'll automatically be assigned the 'verified' role, and you'll be all set to embark on your Discord journey. If you have any questions or need assistance along the way, don't hesitate to reach out to our friendly community.\n
+Enjoy your time here!
+""")
 
 # when joining a server
 # 1. Block all existing channels to everyone except for administrator
@@ -68,7 +73,7 @@ async def on_guild_join(guild):
     else:
         await guild.create_role(name='Verified')
         print("The Verified role created in this Discord Server")
-    await verification_channel.send('By using the ‘/verify’ command, you can start the humanID verification process.')
+    await verification_channel.send("""By simply input ‘/verify’ in the Message box, click on the command that matches 'humanID Verification' and press Enter, you can start the humanID verification process.""")
 
 # test simple slash command
 @bot.tree.command(name="hello")
