@@ -2,3 +2,6 @@
 .idea/
 *.pyc
 postgres-data/
+.vscode/
+**.DS_Store
+

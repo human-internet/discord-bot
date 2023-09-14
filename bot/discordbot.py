@@ -17,6 +17,7 @@ env = dotenv_values()
 TOKEN = env['DISCORD_TOKEN']
 # may want to limit the intents in the future
 intents = discord.Intents.all()
+intents.members = True
 
 # bot (subclass of the discord client class)
 bot = commands.Bot(
@@ -33,47 +34,64 @@ tree = app_commands.CommandTree(client)
 @bot.event
 async def on_ready():
     print("Logged in as {0.user}".format(bot))
-    print("Bot is Up and Ready!")
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} command(s)")
     except Exception as e:
         print(e)
 
+@bot.event
+async def on_member_join(member):
+    # This function will be called when a new member joins the server
+    print(f'{member.name} has joined the server.')
+    # Sends the member a welcome message that mentions the server name and the member
+    server_name = member.guild.name
+    await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We're thrilled to have you here. To get started, please head over to the 'get_verified' channel to complete the verification process.\n
+Our verification is a quick and simple step that ensures you have access to various features on our Discord server. Don't worry, it's easy! Once you've completed the verification process, you'll automatically be assigned the 'verified' role, and you'll be all set to embark on your Discord journey. If you have any questions or need assistance along the way, don't hesitate to reach out to our friendly community.\n
+Enjoy your time here!
+""")
+
 # when joining a server
 # 1. Block all existing channels to everyone except for administrator
 # 2. automatically create the verified role and get-verified channel
 @bot.event
 async def on_guild_join(guild):
-    print("Guild is Up and Ready!")
-    # print(guild.roles)
-    everyone = discord.utils.get(guild.roles, name='@everyone')
-    # print("everyone", everyone)
-
-    roles = discord.utils.get(guild.roles, name='Verified')
-    if not roles:
-        await guild.create_role(name='Verified')
-    print("create a role!!")
-
-    # only create the channel if it does not exist
-    allchannels = guild.channels
-
-    for channel in allchannels:
-        # print(channel)
-        await channel.set_permissions(everyone, read_messages=False, send_messages=False)
-        # print("---------------block")
-
     channels = discord.utils.get(guild.channels, name='get-verified')
+    # only create the channel if it does not exist
     if not channels:
         await guild.create_text_channel('get-verified')
-
-    channels = discord.utils.get(guild.channels, name='get-verified')
-    await channels.send('By using the ‘/verify’ command, you can start the humanID verification process.')
-
+    verification_channel = discord.utils.get(guild.channels, name='get-verified')  
+    # Setting the @everyone role on all channels
+    everyone = discord.utils.get(guild.roles, name='@everyone')
+    allchannels = guild.channels
+    for channel in allchannels:
+        await channel.set_permissions(everyone, read_messages=False, send_messages=False)
+    # Getting the Verified Role
+    verified_role = discord.utils.get(guild.roles, name='Verified')
+    if verified_role:
+        await verification_channel.send('Pre-existing Verified Role Detected: Please make sure the Verified role is ranked under the humanID Verification bot Role.')
+    else:
+        await guild.create_role(name='Verified')
+        print("The Verified role created in this Discord Server")
+    await verification_channel.send("""By simply input ‘/verify’ in the Message box, click on the command that matches 'humanID Verification' and press Enter, you can start the humanID verification process.""")
 
 # test simple slash command
 @bot.tree.command(name="hello")
 async def hello(interaction: discord.Interaction):
+    # guild = interaction.guild
+    # bot_role = discord.utils.get(guild.roles, name=BOT_NAME)
+    # if not bot_role:
+    #     await interaction.response.send_message('Cannot find the role for {}.'.format(BOT_NAME))
+    #     return
+    # bot_position = bot_role.position
+    # new_verify_position = bot_position - 2
+    # verified_role = discord.utils.get(guild.roles, name='Verified') 
+    # positions = {
+    #     verified_role: new_verify_position
+    # }
+    # new_positions = await guild.edit_role_positions(positions=positions)
+    # for role in new_positions:
+    #     print(role.name, ': ', role.position)
     await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!"
                                             , ephemeral=True)
 
@@ -151,6 +169,7 @@ async def verify(interaction: discord.Interaction):
 
     # 5 minute of pinging
     for timeout in range(100):
+        # Trying the await clause
         response = requests.get(
             BACKEND_URL + '/api/confirm/?requestId={}'.format(requestId),
         )
@@ -169,13 +188,18 @@ async def verify(interaction: discord.Interaction):
             break
 
     if success:
-        requests.delete(
-            BACKEND_URL + '/api/removeEntry/?requestId={}'.format(requestId)
-        )
-        
         roles = discord.utils.get(interaction.guild.roles, name='Verified')
-        await author.add_roles(roles)
-        outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
+        if roles: 
+            try:
+                await author.add_roles(roles)
+                outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
+                requests.delete(
+                    BACKEND_URL + '/api/removeEntry/?requestId={}'.format(requestId)
+                )
+            except discord.Forbidden:
+                outcome = "I don't have the permission to add the Verified role, please contact the admin."
+            except discord.HTTPException as e:
+                outcome = "An error occurred while trying to add the Verified role: {}".format(e)
     await interaction.edit_original_response(content=outcome)
 
     # log verification attempt into the log channel
@@ -211,7 +235,7 @@ async def verify(interaction: discord.Interaction):
 
 # @bot.tree.command(name='setup')
 # async def setup(interaction: discord.Interaction):
-#     if not interaction.user.guild_permissions.administrator and False:
+#     if not interaction.user.guild_permissions.administrator:
 #         # only admins can run this commmand
 #         await interaction.response.send_message(
 #             'Access to the bot settings is only available to admins. Please contact an admin if you would like to change the settings.',
@@ -236,11 +260,11 @@ async def verify(interaction: discord.Interaction):
 #     )
 
 #     # code for buttons if wanted for QOL in the future TODO
-#     # view.add_item(d)
-#     # locked = discord.ui.Button(label='t')
-#     # view.add_item(locked)
-#     # locked = discord.ui.Button(label='test')
-#     # view.add_item(locked)
+#     view.add_item(d)
+#     locked = discord.ui.Button(label='t')
+#     view.add_item(locked)
+#     locked = discord.ui.Button(label='test')
+#     view.add_item(locked)
 
 #     view.interaction_check = handleInteraction
 #     await interaction.response.send_message(
@@ -351,6 +375,20 @@ async def test(ctx):
     view.interaction_check = handleInteraction
     # await message.channel.send(embed=embed, view=view)
 
+# async def role_positions_setup(guild):
+#     num_roles = len(guild.roles)
+#     new_bot_position = num_roles - 1
+#     new_verify_position = num_roles - 2
+#     verified_role = discord.utils.get(guild.roles, name='Verified') 
+#     bot_role = discord.utils.get(guild.roles, name=bot_name)
+#     positions = {
+#         verified_role: new_verify_position,
+#         bot_role: new_bot_position
+#     }
+#     new_positions = await guild.edit_role_positions(positions=positions)
+#     roles = guild.roles
+#     for role in new_positions:
+#         print(role.name, ': ', role.position)
 
 @bot.event
 async def on_interaction(interaction):

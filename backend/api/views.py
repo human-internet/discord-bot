@@ -130,7 +130,6 @@ def verifyAttempt(request):
     userQuery = request.query_params.get('userId', None)
     reqQuery = request.query_params.get('requestId', None)
     serverId = request.query_params.get('serverId', None)
-    print("Server ID" + serverId)
     # Case: request does not have a userId
     if not userQuery:
         return Response("The user id is required", status=400)
@@ -182,7 +181,7 @@ def checkVerify(request):
 
     if created - datetime.now() < timedelta(minutes=10) and serializer['verified']:
         # If the attempt to verify was within a 5 minute time frame
-        req.verified = False
+        req.verified = True
         req.save()
         status = 200
 
@@ -227,10 +226,7 @@ def check_server_duplicate(humanUserId, serverQuery):
     associatedAccount = Person.objects.filter(humanUserId=humanUserId).exists()
     if associatedAccount:
         associatedCredentialList = Person.objects.filter(humanUserId=humanUserId)
-        print(len(associatedCredentialList))
         for associatedCredential in associatedCredentialList:
-            print(associatedCredential.serverId)
-            print(serverQuery)
             if associatedCredential.serverId == serverQuery:
                 return True
         return False
@@ -251,7 +247,6 @@ def check_server_duplicate(humanUserId, serverQuery):
 def verification_successful(request):
     serverQuery = request.query_params.get('serverId', None)
     exchangeToken = request.query_params.get('et')
-    print("verification_successful being debugged")
     if not serverQuery:
         return Response("The server id is required", status=400)
 
@@ -299,17 +294,15 @@ def verification_successful(request):
         server_duplicate = check_server_duplicate(humanUserId, serverQuery)
         if server_duplicate:
             return Response(
-                'The provided credentials are already associated with another user in the server with the server id {}'.format(serverQuery), status=409)
-        else:
-            print("No Discord Server - humanID repeat, putting new person in database")
-            Person.objects.create(
-                humanUserId=humanUserId,
-                userId=req.userId,
-                serverId=serverQuery,
-            )
-            req.verified = True
-            req.save()      
-        # success
+                'The provided credentials are already associated with another user in the server {}'
+                .format(serverQuery), status=409)
+            # No Discord Server - humanID repeat, putting new person in database
+        Person.objects.create(
+            humanUserId=humanUserId,
+            userId=req.userId,
+            serverId=serverQuery,
+        )
         req.verified = True
-        req.save()
+        req.save()      
+        # success
         return Response(status=200)
