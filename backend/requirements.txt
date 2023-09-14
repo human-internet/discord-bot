@@ -58,4 +58,5 @@ psycopg2-binary
 pyshorteners
 django-cors-headers
 django-environ
+mysqlclient
 
