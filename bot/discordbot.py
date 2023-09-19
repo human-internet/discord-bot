@@ -46,7 +46,7 @@ async def on_member_join(member):
     print(f'{member.name} has joined the server.')
     # Sends the member a welcome message that mentions the server name and the member
     server_name = member.guild.name
-    await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We're thrilled to have you here. To get started, please head over to the 'get_verified' channel to complete the verification process.\n
+    await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We're thrilled to have you here. To get started, please head over to the 'get-verified' channel to complete the verification process.\n
 Our verification is a quick and simple step that ensures you have access to various features on our Discord server. Don't worry, it's easy! Once you've completed the verification process, you'll automatically be assigned the 'verified' role, and you'll be all set to embark on your Discord journey. If you have any questions or need assistance along the way, don't hesitate to reach out to our friendly community.\n
 Enjoy your time here!
 """)
@@ -56,16 +56,44 @@ Enjoy your time here!
 # 2. automatically create the verified role and get-verified channel
 @bot.event
 async def on_guild_join(guild):
+
     channels = discord.utils.get(guild.channels, name='get-verified')
     # only create the channel if it does not exist
     if not channels:
         await guild.create_text_channel('get-verified')
     verification_channel = discord.utils.get(guild.channels, name='get-verified')  
+    # Update channel permissions
+
     # Setting the @everyone role on all channels
     everyone = discord.utils.get(guild.roles, name='@everyone')
+    everyone_permissions = everyone.permissions
+    everyone_permissions.update(use_application_commands=True)
+    try:
+        # Update the permissions for the @everyone role
+        await everyone.edit(permissions=everyone_permissions)
+        print(f'Updated @everyone role permissions successfully.')
+    except discord.Forbidden:
+        # If the bot lacks the "Manage Roles" permission or other issues occur, send a message in the channel.
+        error_message = (
+            f"Failed to update @everyone role permissions. "
+            f"Please ensure the bot has the 'Manage Roles' permission and that 'Using Application Command' option is turned on."
+        )
+        await verification_channel.send(error_message)
     allchannels = guild.channels
     for channel in allchannels:
         await channel.set_permissions(everyone, read_messages=False, send_messages=False)
+    
+    overwrites = {
+        guild.default_role: discord.PermissionOverwrite(
+            view_channel=True,
+            send_messages=True,
+            embed_links=True,
+            attach_files=True,
+            use_application_commands=True,
+        )
+    }
+    await verification_channel.edit(overwrites=overwrites)
+    print("The get-verified channel has been created in this Discord Server and should be reachable by everyone.")
     # Getting the Verified Role
     verified_role = discord.utils.get(guild.roles, name='Verified')
     if verified_role:
