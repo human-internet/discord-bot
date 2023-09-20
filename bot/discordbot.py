@@ -43,12 +43,11 @@ async def on_ready():
 @bot.event
 async def on_member_join(member):
     # This function will be called when a new member joins the server
-    print(f'{member.name} has joined the server.')
     # Sends the member a welcome message that mentions the server name and the member
     server_name = member.guild.name
-    await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We're thrilled to have you here. To get started, please head over to the 'get-verified' channel to complete the verification process.\n
-Our verification is a quick and simple step that ensures you have access to various features on our Discord server. Don't worry, it's easy! Once you've completed the verification process, you'll automatically be assigned the 'verified' role, and you'll be all set to embark on your Discord journey. If you have any questions or need assistance along the way, don't hesitate to reach out to our friendly community.\n
-Enjoy your time here!
+    await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the 'get-verified' channel. Then type '/verify' to invoke this bot to help complete the verification process. 
+\n
+After that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to our friendly community. Enjoy your time here!
 """)
 
 # when joining a server
@@ -62,7 +61,9 @@ async def on_guild_join(guild):
     if not channels:
         await guild.create_text_channel('get-verified')
     verification_channel = discord.utils.get(guild.channels, name='get-verified')  
-    # Update channel permissions
+    log_channel = discord.utils.get(guild.channels, name='logs')
+    if not log_channel:
+        log_channel = await guild.create_text_channel('logs')
 
     # Setting the @everyone role on all channels
     everyone = discord.utils.get(guild.roles, name='@everyone')
@@ -90,6 +91,7 @@ async def on_guild_join(guild):
             embed_links=True,
             attach_files=True,
             use_application_commands=True,
+            read_message_history=True,
         )
     }
     await verification_channel.edit(overwrites=overwrites)
@@ -400,7 +402,6 @@ async def test(ctx):
     locked = discord.ui.Button(label='test')
     view.add_item(locked)
 
-    view.interaction_check = handleInteraction
     # await message.channel.send(embed=embed, view=view)
 
 # async def role_positions_setup(guild):
