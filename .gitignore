@@ -1,6 +1,7 @@
 **/.env
 .idea/
 *.pyc
+backend/venv/
 postgres-data/
 .vscode/
 **.DS_Store
