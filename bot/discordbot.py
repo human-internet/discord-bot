@@ -55,20 +55,24 @@ After that, you'll be all set to embark on your Discord journey. If you have any
 # 2. automatically create the verified role and get-verified channel
 @bot.event
 async def on_guild_join(guild):
-
     channels = discord.utils.get(guild.channels, name='get-verified')
-    # only create the channel if it does not exist
+    # Only create the channel if it does not exist
     if not channels:
         await guild.create_text_channel('get-verified')
     verification_channel = discord.utils.get(guild.channels, name='get-verified')  
     log_channel = discord.utils.get(guild.channels, name='logs')
     if not log_channel:
         log_channel = await guild.create_text_channel('logs')
-
     # Setting the @everyone role on all channels
     everyone = discord.utils.get(guild.roles, name='@everyone')
     everyone_permissions = everyone.permissions
-    everyone_permissions.update(use_application_commands=True)
+    everyone_permissions.update(
+        use_application_commands=True,
+        send_messages=False,
+        view_channel=False,
+        read_message_history=False,
+        embed_links=False
+        )
     try:
         # Update the permissions for the @everyone role
         await everyone.edit(permissions=everyone_permissions)
@@ -83,7 +87,7 @@ async def on_guild_join(guild):
     allchannels = guild.channels
     for channel in allchannels:
         await channel.set_permissions(everyone, read_messages=False, send_messages=False)
-    
+    # Make exception for the get-verified channel
     overwrites = {
         guild.default_role: discord.PermissionOverwrite(
             view_channel=True,
@@ -95,37 +99,20 @@ async def on_guild_join(guild):
         )
     }
     await verification_channel.edit(overwrites=overwrites)
-    print("The get-verified channel has been created in this Discord Server and should be reachable by everyone.")
     # Getting the Verified Role
     verified_role = discord.utils.get(guild.roles, name='Verified')
     if verified_role:
         await verification_channel.send('Pre-existing Verified Role Detected: Please make sure the Verified role is ranked under the humanID Verification bot Role.')
     else:
         await guild.create_role(name='Verified')
-        print("The Verified role created in this Discord Server")
-    await verification_channel.send("""By simply input ‘/verify’ in the Message box, click on the command that matches 'humanID Verification' and press Enter, you can start the humanID verification process.""")
+    await verification_channel.send("""To gain full access to this Discord server, please enter '/verify' in the chat box to initiate the verification process. Rest assured, we do not retain any of your private information during this process.""")
 
 # test simple slash command
 @bot.tree.command(name="hello")
 async def hello(interaction: discord.Interaction):
-    # guild = interaction.guild
-    # bot_role = discord.utils.get(guild.roles, name=BOT_NAME)
-    # if not bot_role:
-    #     await interaction.response.send_message('Cannot find the role for {}.'.format(BOT_NAME))
-    #     return
-    # bot_position = bot_role.position
-    # new_verify_position = bot_position - 2
-    # verified_role = discord.utils.get(guild.roles, name='Verified') 
-    # positions = {
-    #     verified_role: new_verify_position
-    # }
-    # new_positions = await guild.edit_role_positions(positions=positions)
-    # for role in new_positions:
-    #     print(role.name, ': ', role.position)
     await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!"
                                             , ephemeral=True)
-
-
+    
 # Catches the /verify slash command
 @bot.tree.command(name='verify')
 async def verify(interaction: discord.Interaction):
@@ -148,18 +135,9 @@ async def verify(interaction: discord.Interaction):
 
     BACKEND_URL = env["DISCORD_BACKEND_URL"]
     FRONTEND_URL = env["DISCORD_FRONTEND_URL"]
-
-    # await interaction.response.send_message(
-    #         # 'This server does not have associated credentials. Please ask an admin to add this server from the humanID developer console.',
-    #         BACKEND_URL,
-    #         ephemeral=True
-    #     )
-    # return
-    # Gets the link to humanID
     response = requests.get(
         BACKEND_URL + '/api?serverId=' + serverId
     )
-
     if response.status_code == 400:
         await interaction.response.send_message(
             'This server does not have associated credentials. Please ask an admin to add this server from the humanID developer console.',
@@ -172,11 +150,9 @@ async def verify(interaction: discord.Interaction):
             ephemeral=True
         )
         return
-
     resJson = response.json()
     requestId = resJson['requestId']
     url = resJson['url']
-
     # Creates a db entry for the user to keep track of the link timeout
     requests.put(
         BACKEND_URL + '/api/start/?requestId={}&userId={}&serverId={}'.format(requestId, userId, serverId)
@@ -193,10 +169,8 @@ async def verify(interaction: discord.Interaction):
         ),
         ephemeral=True
     )
-
     success = False
     outcome = 'Failed to verify your identity. Please try again.'
-
     # 5 minute of pinging
     for timeout in range(100):
         # Trying the await clause
