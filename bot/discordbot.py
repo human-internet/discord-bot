@@ -49,7 +49,7 @@ async def on_member_join(member):
     server_name = member.guild.name
     await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process. 
 \n
-After that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Enjoy your time here!
+After that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
 """)
 
 # when joining a server
@@ -115,7 +115,6 @@ async def setupVerifiedRole(guild):
         verified_role_permissions = verified_role.permissions
         verified_role_permissions.update(
             view_channel=True,
-            create_instant_invite = True,
             change_nickname = True,
             send_messages=True,
             send_messages_in_threads=True,
@@ -138,7 +137,7 @@ async def setupVerifiedRole(guild):
                 f"Please ensure the @Verified role has appropriate permissions within the server."
             )
             await verification_channel.send(error_message)
-    await verification_channel.send("""To gain full access to this Discord server, please enter '/verify' in the chat box to initiate the verification process. Rest assured, we do not retain any of your private information during this process. If you encounter any issue, please contact humanID at discord@human-id.org.
+    await verification_channel.send("""To gain full access to this Discord server, please enter '/verify' in the chat box to initiate the verification process. Rest assured, we do not retain any of your private information during this process. If you encounter any issue, please contact humanID at discord@human-id.org. Replies to this message do not reach humanID.
                                     """)
 
 # test simple slash commandac
