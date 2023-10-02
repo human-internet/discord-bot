@@ -44,15 +44,16 @@ async def on_ready():
 async def on_member_join(member):
     # This function will be called when a new member joins the server
     # Sends the member a welcome message that mentions the server name and the member
-    # Get the "get-verified" channel from the server
+    # Get the "get-verified" channel from the server and sends a reference to user DM
     get_verified_channel = discord.utils.get(member.guild.channels, name="get-verified")
     server_name = member.guild.name
     await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
 """)
 
-# when joining a server
-# 1. Block all existing channels to everyone except for administrator
-# 2. automatically create the verified role and get-verified channel
+# When joining a server
+# 1. automatically create the humanID-Verified role, get-verified channel, and logs channel
+# 2. set the permissions for the humanID-Verified role
+# 3. set the permissions for the get-verified channel
 @bot.event
 async def on_guild_join(guild):
     channels = discord.utils.get(guild.channels, name='get-verified')
@@ -63,31 +64,24 @@ async def on_guild_join(guild):
     log_channel = discord.utils.get(guild.channels, name='logs')
     if not log_channel:
         log_channel = await guild.create_text_channel('logs')
-    # Setting the @everyone role on all channels
-    everyone = discord.utils.get(guild.roles, name='@everyone')
-    everyone_permissions = everyone.permissions
-    everyone_permissions.update(
-        use_application_commands=True,
-        send_messages=False,
-        view_channel=False,
-        read_message_history=False,
-        embed_links=False
-        )
-    try:
-        # Update the permissions for the @everyone role
-        await everyone.edit(permissions=everyone_permissions)
-        print(f'Updated @everyone role permissions successfully.')
-    except discord.Forbidden:
-        # If the bot lacks the "Manage Roles" permission or other issues occur, send a message in the channel.
-        error_message = (
-            f"Failed to update @everyone role permissions. "
-            f"Please ensure the bot has the 'Manage Roles' permission and that 'Using Application Command' option is turned on."
-        )
-        await verification_channel.send(error_message)
-    allchannels = guild.channels
-    for channel in allchannels:
-        await channel.set_permissions(everyone, read_messages=False, send_messages=False)
-    # Make exception for the get-verified channel
+    await setupVerifiedRole(guild)
+    # everyone_channels = []
+    # for channel in guild.channels:
+    #     # Check if the @everyone role has the "View Channel" permission
+    #     if channel.permissions_for(guild.default_role).view_channel:
+    #         everyone_channels.append(channel.name)
+    # if everyone_channels:
+    #     await verification_channel.send(f"Channels viewable by @everyone prior to installing humanID Discor Bot: {', '.join(everyone_channels)}")
+    #     await verification_channel.send(f"These channels are now viewable by users with @humanID-Verified role through completing the /verify command.")
+    # else:
+    #     await verification_channel.send("There are no channels viewable by @everyone in this server.")
+    # verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
+    # for channel_name in everyone_channels:
+    #     if channel_name != 'get-verified':
+    #         channel = discord.utils.get(guild.channels, name=channel_name)
+    #         await channel.set_permissions(everyone, read_messages=False, send_messages=False)
+    #         await channel.set_permissions(verified_role, read_messages=True, send_messages=True)
+
     overwrites = {
         guild.default_role: discord.PermissionOverwrite(
             view_channel=True,
@@ -99,7 +93,6 @@ async def on_guild_join(guild):
         )
     }
     await verification_channel.edit(overwrites=overwrites)
-    await setupVerifiedRole(guild)
 
 async def setupVerifiedRole(guild):
     # Getting the Verified Role
@@ -125,7 +118,7 @@ async def setupVerifiedRole(guild):
             use_application_commands=True
         )
         try:
-        # Update the permissions for the @everyone role
+        # Update the permissions for the @humanID-Verified role
             await verified_role.edit(permissions=verified_role_permissions)
             print(f'Updated @humanID-Verified role permissions successfully.')
         except discord.Forbidden:
@@ -143,10 +136,24 @@ async def setupVerifiedRole(guild):
 async def hello(interaction: discord.Interaction):
     await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!")
     verified_role = discord.utils.get(interaction.guild.roles, name='humanID-Verified')
+
     verified_role_permissions = verified_role.permissions
+    print("here are the open permissions")
     for permission in verified_role_permissions:
         if permission[1]:
             print(permission[0])
+    print("here are the public channels")
+    # everyone_channels = []
+
+    # for channel in interaction.guild.channels:
+    #     # Check if the @everyone role has the "View Channel" permission
+    #     if channel.permissions_for(interaction.guild.default_role).view_channel:
+    #         everyone_channels.append(channel.name)
+
+    # if everyone_channels:
+    #     print(f"Channels viewable by @everyone: {', '.join(everyone_channels)}")
+    # else:
+    #     print("There are no channels viewable by @everyone in this server.")
     # permission_names = [permission[0] for permission in verified_role_permissions if verified_role_permissions[1]]
     # await interaction.response.send_message(f"Permissions for the 'Verified' role: {', '.join(permission_names)}")
 
