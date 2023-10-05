@@ -135,27 +135,7 @@ async def setupVerifiedRole(guild):
 @bot.tree.command(name="hello")
 async def hello(interaction: discord.Interaction):
     await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!")
-    verified_role = discord.utils.get(interaction.guild.roles, name='humanID-Verified')
-
-    verified_role_permissions = verified_role.permissions
-    print("here are the open permissions")
-    for permission in verified_role_permissions:
-        if permission[1]:
-            print(permission[0])
-    print("here are the public channels")
-    # everyone_channels = []
-
-    # for channel in interaction.guild.channels:
-    #     # Check if the @everyone role has the "View Channel" permission
-    #     if channel.permissions_for(interaction.guild.default_role).view_channel:
-    #         everyone_channels.append(channel.name)
-
-    # if everyone_channels:
-    #     print(f"Channels viewable by @everyone: {', '.join(everyone_channels)}")
-    # else:
-    #     print("There are no channels viewable by @everyone in this server.")
-    # permission_names = [permission[0] for permission in verified_role_permissions if verified_role_permissions[1]]
-    # await interaction.response.send_message(f"Permissions for the 'Verified' role: {', '.join(permission_names)}")
+    
 
 # Catches the /verify slash command
 @bot.tree.command(name='verify')
