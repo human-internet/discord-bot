@@ -8,28 +8,27 @@ on:
 jobs:
     SAST-CodeQL:
         name: SAST-CodeQL
-        needs: build
         permissions:
             actions: read
             contents: read
             security-events: write
         runs-on: ubuntu-latest
-        
+                
         strategy:
             fail-fast: false
             matrix:
-                language: [javascript, python]
+                language: ['javascript', 'python']
 
         steps:
-        - name: Checkout
+          - name: Checkout repository
             uses: actions/checkout@v3
-            
-        - name: Initialize CodeQL
+
+          - name: Initialize CodeQL
             uses: github/codeql-action/init@v2
             with:
                 languages: ${{ matrix.language }}
 
-        - name: Analyze code with CodeQL
+          - name: Analyze code with CodeQL
             uses: github/codeql-action/analyze@v2
             with:
                 # Path to the CodeQL database
