@@ -1,0 +1,35 @@
+name: 00 - Main CI/CD Pipeline
+
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+        branches: [ main ]
+    workflow_dispatch:
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v2
+
+          - name: Login to DockerHub
+            uses: docker/login-action@v1
+            with:
+                username: ${{ secrets.DOCKERHUB_USERNAME }}
+                password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+          - name: Build Docker images
+            run: docker-compose build
+            
+          - name: Run Docker containers
+            run: docker-compose up -d
+    
+    sast:
+        needs: build
+        name: 01 - Static Application Security Testing
+        uses: ./.github/workflows/sast.yml
+        secrets: inherit
+    

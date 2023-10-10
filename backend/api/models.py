@@ -2,6 +2,8 @@ from django.db import models
 
 class Server(models.Model):
     #Discord credentials
+    # Implement a field that tracks the client's email
+    clientEmail = models.TextField()
     serverId     = models.TextField(null=False)
     channelName  = models.TextField(null=False, default='get-verified')
     roleName     = models.TextField(null=False, default='Verified')

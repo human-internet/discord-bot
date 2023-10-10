@@ -43,58 +43,99 @@ async def on_ready():
 @bot.event
 async def on_member_join(member):
     # This function will be called when a new member joins the server
-    print(f'{member.name} has joined the server.')
     # Sends the member a welcome message that mentions the server name and the member
+    # Get the "get-verified" channel from the server and sends a reference to user DM
+    get_verified_channel = discord.utils.get(member.guild.channels, name="get-verified")
     server_name = member.guild.name
-    await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We're thrilled to have you here. To get started, please head over to the 'get_verified' channel to complete the verification process.\n
-Our verification is a quick and simple step that ensures you have access to various features on our Discord server. Don't worry, it's easy! Once you've completed the verification process, you'll automatically be assigned the 'verified' role, and you'll be all set to embark on your Discord journey. If you have any questions or need assistance along the way, don't hesitate to reach out to our friendly community.\n
-Enjoy your time here!
+    await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
 """)
 
-# when joining a server
-# 1. Block all existing channels to everyone except for administrator
-# 2. automatically create the verified role and get-verified channel
+# When joining a server
+# 1. automatically create the humanID-Verified role, get-verified channel, and logs channel
+# 2. set the permissions for the humanID-Verified role
+# 3. set the permissions for the get-verified channel
 @bot.event
 async def on_guild_join(guild):
     channels = discord.utils.get(guild.channels, name='get-verified')
-    # only create the channel if it does not exist
+    # Only create the channel if it does not exist
     if not channels:
         await guild.create_text_channel('get-verified')
     verification_channel = discord.utils.get(guild.channels, name='get-verified')  
-    # Setting the @everyone role on all channels
-    everyone = discord.utils.get(guild.roles, name='@everyone')
-    allchannels = guild.channels
-    for channel in allchannels:
-        await channel.set_permissions(everyone, read_messages=False, send_messages=False)
-    # Getting the Verified Role
-    verified_role = discord.utils.get(guild.roles, name='Verified')
-    if verified_role:
-        await verification_channel.send('Pre-existing Verified Role Detected: Please make sure the Verified role is ranked under the humanID Verification bot Role.')
-    else:
-        await guild.create_role(name='Verified')
-        print("The Verified role created in this Discord Server")
-    await verification_channel.send("""By simply input ‘/verify’ in the Message box, click on the command that matches 'humanID Verification' and press Enter, you can start the humanID verification process.""")
+    log_channel = discord.utils.get(guild.channels, name='logs')
+    if not log_channel:
+        log_channel = await guild.create_text_channel('logs')
+    await setupVerifiedRole(guild)
+    # everyone_channels = []
+    # for channel in guild.channels:
+    #     # Check if the @everyone role has the "View Channel" permission
+    #     if channel.permissions_for(guild.default_role).view_channel:
+    #         everyone_channels.append(channel.name)
+    # if everyone_channels:
+    #     await verification_channel.send(f"Channels viewable by @everyone prior to installing humanID Discor Bot: {', '.join(everyone_channels)}")
+    #     await verification_channel.send(f"These channels are now viewable by users with @humanID-Verified role through completing the /verify command.")
+    # else:
+    #     await verification_channel.send("There are no channels viewable by @everyone in this server.")
+    # verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
+    # for channel_name in everyone_channels:
+    #     if channel_name != 'get-verified':
+    #         channel = discord.utils.get(guild.channels, name=channel_name)
+    #         await channel.set_permissions(everyone, read_messages=False, send_messages=False)
+    #         await channel.set_permissions(verified_role, read_messages=True, send_messages=True)
 
-# test simple slash command
+    overwrites = {
+        guild.default_role: discord.PermissionOverwrite(
+            view_channel=True,
+            send_messages=True,
+            embed_links=True,
+            attach_files=True,
+            use_application_commands=True,
+            read_message_history=True,
+        )
+    }
+    await verification_channel.edit(overwrites=overwrites)
+
+async def setupVerifiedRole(guild):
+    # Getting the Verified Role
+    verification_channel = discord.utils.get(guild.channels, name='get-verified') 
+    verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
+    if verified_role:
+        await verification_channel.send('Pre-existing humanID-Verified Role Detected: Please make sure the humanID-Verified role is ranked under the humanID Verification bot Role.')
+    else:
+        await guild.create_role(name='humanID-Verified')
+        verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
+        verified_role_permissions = verified_role.permissions
+        verified_role_permissions.update(
+            view_channel=True,
+            change_nickname = True,
+            send_messages=True,
+            send_messages_in_threads=True,
+            create_public_threads=True,
+            embed_links=True,
+            attach_files=True,
+            add_reactions=True,
+            use_external_emojis=True,
+            read_message_history=True,
+            use_application_commands=True
+        )
+        try:
+        # Update the permissions for the @humanID-Verified role
+            await verified_role.edit(permissions=verified_role_permissions)
+            print(f'Updated @humanID-Verified role permissions successfully.')
+        except discord.Forbidden:
+        # If the bot lacks the "Manage Roles" permission or other issues occur, send a message in the channel.
+            error_message = (
+                f"Failed to update @Verfied role permissions. "
+                f"Please ensure the @humanID-Verified role has appropriate permissions within the server."
+            )
+            await verification_channel.send(error_message)
+    await verification_channel.send("""To gain full access to this Discord server, please enter '/verify' in the chat box to initiate the verification process. Rest assured, we do not retain any of your private information during this process. If you encounter any issue, please contact humanID at discord@human-id.org. Replies to this message do not reach humanID.
+                                    """)
+
+# test simple slash commandac
 @bot.tree.command(name="hello")
 async def hello(interaction: discord.Interaction):
-    # guild = interaction.guild
-    # bot_role = discord.utils.get(guild.roles, name=BOT_NAME)
-    # if not bot_role:
-    #     await interaction.response.send_message('Cannot find the role for {}.'.format(BOT_NAME))
-    #     return
-    # bot_position = bot_role.position
-    # new_verify_position = bot_position - 2
-    # verified_role = discord.utils.get(guild.roles, name='Verified') 
-    # positions = {
-    #     verified_role: new_verify_position
-    # }
-    # new_positions = await guild.edit_role_positions(positions=positions)
-    # for role in new_positions:
-    #     print(role.name, ': ', role.position)
-    await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!"
-                                            , ephemeral=True)
-
+    await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!")
+    
 
 # Catches the /verify slash command
 @bot.tree.command(name='verify')
@@ -118,18 +159,9 @@ async def verify(interaction: discord.Interaction):
 
     BACKEND_URL = env["DISCORD_BACKEND_URL"]
     FRONTEND_URL = env["DISCORD_FRONTEND_URL"]
-
-    # await interaction.response.send_message(
-    #         # 'This server does not have associated credentials. Please ask an admin to add this server from the humanID developer console.',
-    #         BACKEND_URL,
-    #         ephemeral=True
-    #     )
-    # return
-    # Gets the link to humanID
     response = requests.get(
         BACKEND_URL + '/api?serverId=' + serverId
     )
-
     if response.status_code == 400:
         await interaction.response.send_message(
             'This server does not have associated credentials. Please ask an admin to add this server from the humanID developer console.',
@@ -142,11 +174,9 @@ async def verify(interaction: discord.Interaction):
             ephemeral=True
         )
         return
-
     resJson = response.json()
     requestId = resJson['requestId']
     url = resJson['url']
-
     # Creates a db entry for the user to keep track of the link timeout
     requests.put(
         BACKEND_URL + '/api/start/?requestId={}&userId={}&serverId={}'.format(requestId, userId, serverId)
@@ -163,10 +193,8 @@ async def verify(interaction: discord.Interaction):
         ),
         ephemeral=True
     )
-
     success = False
     outcome = 'Failed to verify your identity. Please try again.'
-
     # 5 minute of pinging
     for timeout in range(100):
         # Trying the await clause
@@ -188,7 +216,7 @@ async def verify(interaction: discord.Interaction):
             break
 
     if success:
-        roles = discord.utils.get(interaction.guild.roles, name='Verified')
+        roles = discord.utils.get(interaction.guild.roles, name='humanID-Verified')
         if roles: 
             try:
                 await author.add_roles(roles)
@@ -197,9 +225,9 @@ async def verify(interaction: discord.Interaction):
                     BACKEND_URL + '/api/removeEntry/?requestId={}'.format(requestId)
                 )
             except discord.Forbidden:
-                outcome = "I don't have the permission to add the Verified role, please contact the admin."
+                outcome = "I don't have the permission to add the humanID-Verified role, please contact humanID at discord@human-id.org."
             except discord.HTTPException as e:
-                outcome = "An error occurred while trying to add the Verified role: {}".format(e)
+                outcome = "An error occurred while trying to add the humanID-Verified role: {}".format(e)
     await interaction.edit_original_response(content=outcome)
 
     # log verification attempt into the log channel
@@ -372,7 +400,6 @@ async def test(ctx):
     locked = discord.ui.Button(label='test')
     view.add_item(locked)
 
-    view.interaction_check = handleInteraction
     # await message.channel.send(embed=embed, view=view)
 
 # async def role_positions_setup(guild):
