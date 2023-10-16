@@ -4,4 +4,5 @@
 postgres-data/
 .vscode/
 **.DS_Store
+discord_bot/
 
