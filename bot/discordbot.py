@@ -85,11 +85,9 @@ async def on_guild_join(guild):
     overwrites = {
         guild.default_role: discord.PermissionOverwrite(
             view_channel=True,
-            send_messages=True,
-            embed_links=True,
-            attach_files=True,
             use_application_commands=True,
-            read_message_history=True,
+            change_nickname=True,
+            send_messages=True
         )
     }
     await verification_channel.edit(overwrites=overwrites)
@@ -102,32 +100,31 @@ async def setupVerifiedRole(guild):
         await verification_channel.send('Pre-existing humanID-Verified Role Detected: Please make sure the humanID-Verified role is ranked under the humanID Verification bot Role.')
     else:
         await guild.create_role(name='humanID-Verified')
-        verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
-        verified_role_permissions = verified_role.permissions
-        verified_role_permissions.update(
-            view_channel=True,
-            change_nickname = True,
-            send_messages=True,
-            send_messages_in_threads=True,
-            create_public_threads=True,
-            embed_links=True,
-            attach_files=True,
-            add_reactions=True,
-            use_external_emojis=True,
-            read_message_history=True,
-            use_application_commands=True
+    verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
+    verified_role_permissions = verified_role.permissions
+    verified_role_permissions.update(
+        view_channel=True,
+        change_nickname = True,
+        send_messages=True,
+        send_messages_in_threads=True,
+        create_public_threads=True,
+        embed_links=True,
+        attach_files=True,
+        add_reactions=True,
+        use_external_emojis=True,
+        read_message_history=True,
+        use_application_commands=True
+    )
+    try:
+    # Update the permissions for the @humanID-Verified role
+        await verified_role.edit(permissions=verified_role_permissions)
+    except discord.Forbidden:
+    # If the bot lacks the "Manage Roles" permission or other issues occur, send a message in the channel.
+        error_message = (
+            f"Failed to update @Verfied role permissions. "
+            f"Please ensure the @humanID-Verified role has appropriate permissions within the server."
         )
-        try:
-        # Update the permissions for the @humanID-Verified role
-            await verified_role.edit(permissions=verified_role_permissions)
-            print(f'Updated @humanID-Verified role permissions successfully.')
-        except discord.Forbidden:
-        # If the bot lacks the "Manage Roles" permission or other issues occur, send a message in the channel.
-            error_message = (
-                f"Failed to update @Verfied role permissions. "
-                f"Please ensure the @humanID-Verified role has appropriate permissions within the server."
-            )
-            await verification_channel.send(error_message)
+        await verification_channel.send(error_message)
     await verification_channel.send("""To gain full access to this Discord server, please enter '/verify' in the chat box to initiate the verification process. Rest assured, we do not retain any of your private information during this process. If you encounter any issue, please contact humanID at discord@human-id.org. Replies to this message do not reach humanID.
                                     """)
 
@@ -416,11 +413,5 @@ async def test(ctx):
 #     roles = guild.roles
 #     for role in new_positions:
 #         print(role.name, ': ', role.position)
-
-@bot.event
-async def on_interaction(interaction):
-    print(interaction.guild.id)
-    print(interaction.data)
-
 
 bot.run(TOKEN);
