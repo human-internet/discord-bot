@@ -50,6 +50,15 @@ async def on_member_join(member):
     await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
 """)
 
+# /help command that gives a list of commands
+@bot.tree.command(name="help")
+async def hello(interaction: discord.Interaction):
+    member = interaction.user
+    get_verified_channel = discord.utils.get(member.guild.channels, name="get-verified")
+    await interaction.response.send_message(f"""To get started, {member.mention}, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
+""")
+
+
 # When joining a server
 # 1. automatically create the humanID-Verified role, get-verified channel, and logs channel
 # 2. set the permissions for the humanID-Verified role
@@ -360,9 +369,7 @@ async def verify(interaction: discord.Interaction):
 #         await interaction.response.edit_message(embed=embed, view=view)
 
 
-# @bot.command('serverid')
-# async def serverid(ctx):
-#     await message.channel.send('The server id of this server is: {}'.format(ctx.guild.id))
+
 
 ###################################
 # The commands below are currently only used for testing/development
