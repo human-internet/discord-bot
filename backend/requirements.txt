@@ -34,7 +34,7 @@ pyOpenSSL==22.0.0
 pyparsing==3.0.7
 pytest==7.0.0
 python-dateutil==2.8.2
-PyYAML==6.0
+PyYAML==6.0.1
 requests==2.27.1
 selenium==3.141.0
 six==1.16.0
