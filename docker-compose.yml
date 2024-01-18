@@ -13,6 +13,7 @@ services:
       - ./bot/discordbot.py:/bot/discordbot.py
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    restart: always
 
   frontend:
     container_name: frontend
@@ -29,6 +30,7 @@ services:
       - ./frontend/src:/app/src
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    restart: always
 
   backend:
     container_name: backend
@@ -49,6 +51,7 @@ services:
       - ./backend/sql:/code/sql
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    restart: always
 
   postgres:
     container_name: postgres
