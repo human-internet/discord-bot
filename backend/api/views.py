@@ -11,7 +11,7 @@ import environ
 import json
 from hashlib import blake2b
 from hmac import compare_digest
-
+import json
 from datetime import datetime, timedelta
 
 env = environ.Env()
@@ -39,7 +39,6 @@ def verify(userId, storedId):
 @api_view(['PUT'])
 def addServer(request):
     body = json.loads(request.body)
-    
     if 'serverId' not in body:
         return Response("The server id is required", status=400)
 
