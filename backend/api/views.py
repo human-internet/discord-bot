@@ -8,6 +8,7 @@ from .serializers import *
 import requests
 import urllib.parse
 import environ
+import json
 from hashlib import blake2b
 from hmac import compare_digest
 
@@ -37,8 +38,8 @@ def verify(userId, storedId):
 
 @api_view(['PUT'])
 def addServer(request):
-    body = QueryDict(request.body)
-
+    body = json.loads(request.body)
+    
     if 'serverId' not in body:
         return Response("The server id is required", status=400)
 
@@ -48,6 +49,7 @@ def addServer(request):
     elif 'secret' not in body:
         return Response("The client secret is required", status=400)
 
+    #clientEmail = body['clientEmail']
     serverId = body['serverId']
     clientId = body['clientId']
     clientSecret = body['secret']
