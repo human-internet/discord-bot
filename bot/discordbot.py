@@ -166,7 +166,7 @@ async def verify(interaction: discord.Interaction):
     BACKEND_URL = env["DISCORD_BACKEND_URL"]
     FRONTEND_URL = env["DISCORD_FRONTEND_URL"]
     response = requests.get(
-        BACKEND_URL + '/api?serverId=' + serverId
+        BACKEND_URL + '/api/?serverId=' + serverId
     )
     if response.status_code == 400:
         await interaction.response.send_message(
@@ -201,8 +201,8 @@ async def verify(interaction: discord.Interaction):
     )
     success = False
     outcome = 'Failed to verify your identity. Please try again.'
-    # 5 minute of pinging
-    for timeout in range(100):
+    # 3 minute of pinging
+    for timeout in range(60):
         # Trying the await clause
         response = requests.get(
             BACKEND_URL + '/api/confirm/?requestId={}'.format(requestId),
