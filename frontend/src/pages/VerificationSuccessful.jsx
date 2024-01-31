@@ -42,8 +42,15 @@ function VerificationSuccessful() {
         } else {
           setVerificationStatus('verified');
           localStorage.removeItem("server");
-          //window.close() TODO
-          window.location.replace('https://discord.com/channels/' + server);
+          const isDiscordInstalled = isDiscordAppInstalled();
+          if (isDiscordInstalled) {
+            // Attempt to open Discord with custom URL scheme
+            const discordServerUrl = `discord://discord.com/channels/${server}`;
+            window.location.replace(discordServerUrl);
+          } else {
+            // Fallback to your previous code for redirection
+            window.location.replace('https://discord.com/channels/' + server);
+          }
         }
       } catch (e) {
         setVerificationStatus('failed');
@@ -98,6 +105,24 @@ function VerificationSuccessful() {
       </div>
     </header>
   );
+}
+
+function isDiscordAppInstalled() {
+  // Create an iframe with a Discord URL
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = 'discord://';
+
+  // Add the iframe to the document
+  document.body.appendChild(iframe);
+
+  // Wait for a short time and then remove the iframe
+  setTimeout(() => {
+    document.body.removeChild(iframe);
+  }, 300);
+
+  // If the iframe's contentWindow is not null, Discord is installed
+  return iframe.contentWindow !== null;
 }
 
 export default VerificationSuccessful;
