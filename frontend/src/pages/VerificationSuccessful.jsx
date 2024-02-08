@@ -107,22 +107,29 @@ function VerificationSuccessful() {
   );
 }
 
+/* The code below is using to check if discord is installed on local system
+ * 1. Creating a promise to handle asynchronous operation 
+ * 2. create an iframe element, make it unseen, use 'load' event to determine whether it's has been load
+ * 3. attach the 'onload' (succeed) and 'timeout' (fail) event to resolve
+ */
 function isDiscordAppInstalled() {
-  // Create an iframe with a Discord URL
-  const iframe = document.createElement('iframe');
-  iframe.style.display = 'none';
-  iframe.src = 'discord://';
+  return new Promise((resolve) => {
 
-  // Add the iframe to the document
-  document.body.appendChild(iframe);
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    
+    iframe.onload = function() {
+      resolve(true);
+    };
+    
+    iframe.src = 'discord://';
+    document.body.appendChild(iframe);
 
-  // Wait for a short time and then remove the iframe
-  setTimeout(() => {
-    document.body.removeChild(iframe);
-  }, 300);
-
-  // If the iframe's contentWindow is not null, Discord is installed
-  return iframe.contentWindow !== null;
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      resolve(false);
+    }, 1000);
+  });
 }
 
 export default VerificationSuccessful;
