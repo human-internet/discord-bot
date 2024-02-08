@@ -11,7 +11,6 @@ import environ
 import json
 from hashlib import blake2b
 from hmac import compare_digest
-import json
 from datetime import datetime, timedelta
 
 env = environ.Env()
