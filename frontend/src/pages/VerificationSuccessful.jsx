@@ -107,7 +107,7 @@ function VerificationSuccessful() {
   );
 }
 
-/* The code below is using to check if discord is installed on local system
+/** The code below is using to check if discord is installed on local system
  * 1. Creating a promise to handle asynchronous operation 
  * 2. create an iframe element, make it unseen, use 'load' event to determine whether it's has been load
  * 3. attach the 'onload' (succeed) and 'timeout' (fail) event to resolve
