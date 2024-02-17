@@ -46,6 +46,14 @@ async def on_member_join(member):
     # Sends the member a welcome message that mentions the server name and the member
     # Get the "get-verified" channel from the server and sends a reference to user DM
     get_verified_channel = discord.utils.get(member.guild.channels, name="get-verified")
+    is_unverified = not any(role.name == 'Verified' for role in member.roles)
+
+    # make unverified users can only see the "get-verified" channel
+    if is_unverified:
+        for channel in member.guild.channels:
+            if channel.name != "get-verified":
+                await channel.set_permissions(member, read_messages=False)
+    
     server_name = member.guild.name
     await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
 """)
