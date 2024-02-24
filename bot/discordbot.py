@@ -82,15 +82,33 @@ async def on_guild_join(guild):
         log_channel = await guild.create_text_channel('logs')
     await setupVerifiedRole(guild)
 
-    overwrites = {
-        guild.default_role: discord.PermissionOverwrite(
+
+    # Block no 'humanID-Verified' users to read/send messages in every channel
+    everyone_role = guild.default_role
+    verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
+    overwrites_everywhere = {
+        everyone_role: discord.PermissionOverwrite(
+            view_channel=False,
+            send_messages=False
+        ),
+        verified_role: discord.PermissionOverwrite(
+            view_channel=True,
+            send_messages=True
+        )
+    }
+    for channel in guild.channels:
+        await channel.edit(overwrites=overwrites_everywhere)
+
+    # Allow 'everyone' role to view and send messages in the 'get-verified' channel
+    overwrites_verified_channel = {
+        everyone_role: discord.PermissionOverwrite(
             view_channel=True,
             use_application_commands=True,
             change_nickname=True,
             send_messages=True
         )
     }
-    await verification_channel.edit(overwrites=overwrites)
+    await verification_channel.edit(overwrites=overwrites_verified_channel)
 
 async def setupVerifiedRole(guild):
     # Getting the Verified Role
