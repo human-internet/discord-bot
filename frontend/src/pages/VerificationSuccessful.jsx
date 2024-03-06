@@ -114,25 +114,25 @@ function VerificationSuccessful() {
 function isDiscordAppInstalled() {
   return new Promise((resolve) => {
 
-    let appDetected = false;
-
     const iframe = document.createElement("iframe");
     iframe.style.display = "none";
     
     iframe.onload = function() {
-      appDetected = true;
+      cleanup();
       resolve(true);
+    };
+
+    iframe.onerror = function() {
+      cleanup();
+      resolve(false);
     };
     
     iframe.src = "discord://";
     document.body.appendChild(iframe);
 
-    setTimeout(() => {
+    function cleanup() {
       document.body.removeChild(iframe);
-      if (!appDetected) {
-        resolve(false);
-      }
-    }, 1000);
+    }
   });
 }
 
