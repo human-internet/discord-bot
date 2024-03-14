@@ -42,15 +42,8 @@ function VerificationSuccessful() {
         } else {
           setVerificationStatus('verified');
           localStorage.removeItem("server");
-          const isDiscordInstalled = isDiscordAppInstalled();
-          if (isDiscordInstalled) {
-            // Attempt to open Discord with custom URL scheme
-            const discordServerUrl = `discord://discord.com/channels/${server}`;
-            window.location.replace(discordServerUrl);
-          } else {
-            // Fallback to your previous code for redirection
-            window.location.replace('https://discord.com/channels/' + server);
-          }
+          //window.close() TODO
+          window.location.replace('https://discord.com/channels/' + server);
         }
       } catch (e) {
         setVerificationStatus('failed');
@@ -105,35 +98,6 @@ function VerificationSuccessful() {
       </div>
     </header>
   );
-}
-
-/** The code below is using to check if discord is installed on local system
- 1. Creating a promise to handle asynchronous operation 
- 2. Create an iframe element, make it unseen, use 'load' event to determine whether it's has been load
- 3. Attach the 'onload' (succeed) and 'timeout' (fail) event to resolve */
-function isDiscordAppInstalled() {
-  return new Promise((resolve) => {
-
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    
-    iframe.onload = function() {
-      cleanup();
-      resolve(true);
-    };
-
-    iframe.onerror = function() {
-      cleanup();
-      resolve(false);
-    };
-    
-    iframe.src = "discord://";
-    document.body.appendChild(iframe);
-
-    function cleanup() {
-      document.body.removeChild(iframe);
-    }
-  });
 }
 
 export default VerificationSuccessful;
