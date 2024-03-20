@@ -29,6 +29,10 @@ bot = commands.Bot(
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
+# Developer Console home page
+dc_url = 'https://developers.human-id.org/'
+# Discord Bot Integration Guide
+guide_url = 'https://docs.human-id.org/discord-bot-integration-guide'
 
 # ensures the bot is working/connected
 @bot.event
@@ -170,7 +174,8 @@ async def verify(interaction: discord.Interaction):
     )
     if response.status_code == 400:
         await interaction.response.send_message(
-            'This server does not have associated credentials. Please ask an admin to add this server from the humanID developer console.',
+            'Your server is not yet registered with humanID. Please ask an admin to go to <{}> to register. For a more detailed step-by-step walk-through, go to <{}>.'
+            .format(dc_url, guide_url),
             ephemeral=True
         )
         return
