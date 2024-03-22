@@ -8,6 +8,7 @@
 # 4. sudo ./app.sh start dev to start the development container as sudo or the root user
 
 sudo_s=''
+compose_file='docker-compose.dev.yml'
 
 if [ -z "$1" ]
 then
@@ -22,25 +23,24 @@ else
       sudo_s='sudo'
     fi
 
+    if [ "$2" = 'prod' ]
+    then
+      echo "running production container"
+      compose_file='docker-compose.prod.yml'
+    else
+      echo "running development container"
+    fi
+
     if [ "$1" = 'start' ]
     then
-      if [ "$2" = 'prod' ]
+      if [ -z "$3" ]
       then
-        echo "running production container"
-        $sudo_s docker compose -f docker-compose.prod.yml up $3
+        $sudo_s docker compose -f "$compose_file" up
       else
-        echo "running development container"
-        $sudo_s docker compose -f docker-compose.dev.yml up $3
+        $sudo_s docker compose -f "$compose_file" up "$3"
       fi
     else
-      if [ "$2" = 'prod' ]
-      then
-        echo "stopping production container"
-        $sudo_s docker compose -f docker-compose.prod.yml down
-      else
-        echo "stopping development container"
-        $sudo_s docker compose -f docker-compose.dev.yml down
-      fi
+      $sudo_s docker compose -f "$compose_file" down
     fi
   fi
 fi
