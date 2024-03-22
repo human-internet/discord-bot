@@ -50,6 +50,13 @@ async def on_member_join(member):
     # Sends the member a welcome message that mentions the server name and the member
     # Get the "get-verified" channel from the server and sends a reference to user DM
     get_verified_channel = discord.utils.get(member.guild.channels, name="get-verified")
+    is_unverified = not any(role.name == 'humanID-Verified' for role in member.roles)
+
+    # make unverified users can only see the "get-verified" channel
+    if is_unverified:
+        for channel in member.guild.channels:
+            if channel.name != "get-verified":
+                await channel.set_permissions(member, read_messages=False)
     server_name = member.guild.name
     await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
 """)
@@ -78,32 +85,34 @@ async def on_guild_join(guild):
     if not log_channel:
         log_channel = await guild.create_text_channel('logs')
     await setupVerifiedRole(guild)
-    # everyone_channels = []
-    # for channel in guild.channels:
-    #     # Check if the @everyone role has the "View Channel" permission
-    #     if channel.permissions_for(guild.default_role).view_channel:
-    #         everyone_channels.append(channel.name)
-    # if everyone_channels:
-    #     await verification_channel.send(f"Channels viewable by @everyone prior to installing humanID Discor Bot: {', '.join(everyone_channels)}")
-    #     await verification_channel.send(f"These channels are now viewable by users with @humanID-Verified role through completing the /verify command.")
-    # else:
-    #     await verification_channel.send("There are no channels viewable by @everyone in this server.")
-    # verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
-    # for channel_name in everyone_channels:
-    #     if channel_name != 'get-verified':
-    #         channel = discord.utils.get(guild.channels, name=channel_name)
-    #         await channel.set_permissions(everyone, read_messages=False, send_messages=False)
-    #         await channel.set_permissions(verified_role, read_messages=True, send_messages=True)
 
-    overwrites = {
-        guild.default_role: discord.PermissionOverwrite(
+
+    # Block no 'humanID-Verified' users to read/send messages in every channel
+    everyone_role = guild.default_role
+    verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
+    overwrites_everywhere = {
+        everyone_role: discord.PermissionOverwrite(
+            view_channel=False,
+            send_messages=False
+        ),
+        verified_role: discord.PermissionOverwrite(
+            view_channel=True,
+            send_messages=True
+        )
+    }
+    for channel in guild.channels:
+        await channel.edit(overwrites=overwrites_everywhere)
+
+    # Allow 'everyone' role to view and send messages in the 'get-verified' channel
+    overwrites_verified_channel = {
+        everyone_role: discord.PermissionOverwrite(
             view_channel=True,
             use_application_commands=True,
             change_nickname=True,
             send_messages=True
         )
     }
-    await verification_channel.edit(overwrites=overwrites)
+    await verification_channel.edit(overwrites=overwrites_verified_channel)
 
 async def setupVerifiedRole(guild):
     # Getting the Verified Role
@@ -232,6 +241,8 @@ async def verify(interaction: discord.Interaction):
         if roles: 
             try:
                 await author.add_roles(roles)
+                for channel in interaction.guild.channels:
+                    await channel.set_permissions(author, read_messages=True)
                 outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
                 requests.delete(
                     BACKEND_URL + '/api/removeEntry/?requestId={}'.format(requestId)
