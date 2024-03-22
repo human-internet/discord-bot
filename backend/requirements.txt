@@ -59,4 +59,5 @@ pyshorteners
 django-cors-headers
 django-environ
 mysqlclient
+sentry-sdk[django]
 
