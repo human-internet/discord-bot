@@ -1,20 +1,20 @@
 version: '3.7'
 services:
   postgres:
-      container_name: postgres
-      env_file:
-        - .env
-      image: postgres
-      volumes:
-        - ./postgres-data:/var/lib/postgresql/data
-      environment:
-        POSTGRES_DB: ${POSTGRES_DB}
-        POSTGRES_USER: ${POSTGRES_USER}
-        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      ports:
-        - "5432:5432"
-      networks:
-        - human_id
+    container_name: postgres
+    env_file:
+      - .env
+    image: postgres
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    networks:
+      - human_id
   bot:
     container_name: discord_bot
     build:
@@ -68,7 +68,7 @@ services:
       - "host.docker.internal:host-gateway"
     restart: always
 
-  
+
 
 networks:
   human_id:
