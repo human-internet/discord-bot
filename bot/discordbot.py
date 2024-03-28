@@ -77,7 +77,6 @@ async def on_guild_join(guild):
     log_channel = discord.utils.get(guild.channels, name='logs')
     if not log_channel:
         log_channel = await guild.create_text_channel('logs')
-    await verification_channel.send(f"guild ID is: {guild.id}.")
     await setupVerifiedRole(guild)
     # everyone_channels = []
     # for channel in guild.channels:
@@ -175,7 +174,8 @@ async def verify(interaction: discord.Interaction):
     )
     if response.status_code == 400:
         await interaction.response.send_message(
-            'Your server is not yet registered with humanID. Please ask an admin to go to <{}> to register.\nFor a more detailed step-by-step walk-through, go to <{}>.'
+            'Your server is not yet registered with humanID. Please ask an admin to go to <{}> to register.\n\
+            For a more detailed step-by-step walk-through, go to <{}>.'
             .format(dc_url, guide_url),
             ephemeral=True
         )
@@ -411,18 +411,6 @@ async def test(ctx):
     view.add_item(locked)
 
     # await message.channel.send(embed=embed, view=view)
-
-# A test function to get the server owner's information via server's ID
-# restrict the use server to prevent privacy leak  
-@bot.command()
-async def getOwner(ctx, server_id):
-    try:
-        guild = await bot.fetch_guild(server_id)
-        owner_id = guild.owner_id
-        user = await bot.fetch_user(owner_id)
-        await ctx.send(f"The owner of the server \"{guild.name}\" is: \"{user.name}\"")
-    except discord.errors.NotFound:
-        await ctx.send("Server not found.")
 
 # async def role_positions_setup(guild):
 #     num_roles = len(guild.roles)
