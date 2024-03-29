@@ -174,8 +174,7 @@ async def verify(interaction: discord.Interaction):
     )
     if response.status_code == 400:
         await interaction.response.send_message(
-            'Your server is not yet registered with humanID. Please ask an admin to go to <{}> to register.\n\
-            For a more detailed step-by-step walk-through, go to <{}>.'
+            'Your server is not yet registered with humanID. Please ask an admin to go to <{}> to register.\nFor a more detailed step-by-step walk-through, go to <{}>.'
             .format(dc_url, guide_url),
             ephemeral=True
         )
