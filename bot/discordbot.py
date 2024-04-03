@@ -8,6 +8,7 @@ from discord import Webhook
 import requests
 import pyshorteners as ps
 import aiohttp
+import re
 from dotenv import dotenv_values
 
 # load the environment variables
@@ -145,14 +146,51 @@ async def setupVerifiedRole(guild):
 @bot.tree.command(name="hello")
 async def hello(interaction: discord.Interaction):
     await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!")
+
+# register function for server admin to register credential info using command
+@bot.tree.command(name="register")
+async def register(interaction: discord.Interaction, email:str):
+
+    channels = discord.utils.get(interaction.guild.channels, name='get-verified').id
+    if interaction.channel.name != 'get-verified':
+    # message was not sent in the allowed channel
+        await interaction.response.send_message(
+            'This command can only be used in the <#{}> channel.'.format(str(channels)),
+            ephemeral=True
+        )
     
+    author = interaction.user
+    # Check if the user is a server owner or server admin
+    if not author.id == interaction.guild.owner_id:
+        is_admin = False
+        for role in author.roles:
+            if role.permissions.administrator:
+                is_admin = True
+                break
+        if not is_admin:
+            # the user is not authorized as an admin role
+            await interaction.response.send_message(
+                content="You are not authorized to register, reach out to the server admins to do so.",
+                ephemeral=True  # Only visible to the user who sent the command
+            )
+            return
+
+    email_pattern = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
+
+    # await interaction.response.send_message(email)
+    if not re.match(email_pattern, email):
+        await interaction.response.send_message("Invalid email address format. Please provide a valid email address.")
+        return
+    else:
+        await interaction.response.send_message("Success! Please click the activation link we sent to your email!")
+
 
 # Catches the /verify slash command
 @bot.tree.command(name='verify')
 async def verify(interaction: discord.Interaction):
     channels = discord.utils.get(interaction.guild.channels, name='logs')
     if not channels:
-        channel = await interaction.guild.create_text_channel('logs')
+        channels = await interaction.guild.create_text_channel('logs')
 
     author = interaction.user
     serverId = str(interaction.guild.id)
@@ -174,7 +212,7 @@ async def verify(interaction: discord.Interaction):
     )
     if response.status_code == 400:
         await interaction.response.send_message(
-            'Your server is not yet registered with humanID. Please ask an admin to go to <{}> to register.\nFor a more detailed step-by-step walk-through, go to <{}>.'
+            'Your server is not yet registered with humanID. Please ask an admin to register in <{}>. \nIf you are an admin, type \'/register YOUR_EMAIL\' to start'
             .format(dc_url, guide_url),
             ephemeral=True
         )
