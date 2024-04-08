@@ -51,6 +51,9 @@ async def on_member_join(member):
     # Get the "get-verified" channel from the server and sends a reference to user DM
     try:
         get_verified_channel = discord.utils.get(member.guild.channels, name="get-verified")
+        if get_verified_channel is None:
+            raise AttributeError("Channel 'get-verified' not found")
+        
         server_name = member.guild.name
         channel_mention = get_verified_channel.mention
         await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {channel_mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
