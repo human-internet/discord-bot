@@ -166,7 +166,10 @@ async def verify(interaction: discord.Interaction):
 
     if interaction.channel.name != 'get-verified':
         # message was not sent in the allowed channel
-        channels = discord.utils.get(interaction.guild.channels, name='get-verified').id
+        channels = discord.utils.get(interaction.guild.channels, name='get-verified')
+        if not channels:
+            channels = await interaction.guild.create_text_channel('get-verified')
+        channels = channels.id
         await interaction.response.send_message(
             'This command can only be used in the <#{}> channel.'.format(str(channels)),
             ephemeral=True
