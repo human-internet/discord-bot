@@ -49,24 +49,20 @@ async def on_member_join(member):
     # This function will be called when a new member joins the server
     # Sends the member a welcome message that mentions the server name and the member
     # Get the "get-verified" channel from the server and sends a reference to user DM
-    try:
-        get_verified_channel = discord.utils.get(member.guild.channels, name="get-verified")
-        if get_verified_channel is None:
-            raise AttributeError("Channel 'get-verified' not found")
-        
-        server_name = member.guild.name
-        channel_mention = get_verified_channel.mention
-        await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {channel_mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
+    get_verified_channel = discord.utils.get(member.guild.channels, name="get-verified")
+    if not get_verified_channel:
+        get_verified_channel = await member.guild.create_text_channel('get-verified')
+    server_name = member.guild.name
+    await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
 """)
-    except AttributeError:
-        await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and create a #get-verified channel. Then click on the #get-verified channel and type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
-""")
-        
+
 # /help command that gives a list of commands
 @bot.tree.command(name="help")
 async def hello(interaction: discord.Interaction):
     member = interaction.user
     get_verified_channel = discord.utils.get(member.guild.channels, name="get-verified")
+    if not get_verified_channel:
+        get_verified_channel = await member.guild.create_text_channel('get-verified')
     await interaction.response.send_message(f"""To get started, {member.mention}, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
 """)
 
@@ -116,6 +112,8 @@ async def on_guild_join(guild):
 async def setupVerifiedRole(guild):
     # Getting the Verified Role
     verification_channel = discord.utils.get(guild.channels, name='get-verified') 
+    if not verification_channel:
+        verification_channel = await guild.create_text_channel('get-verified')
     verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
     if verified_role:
         await verification_channel.send('Pre-existing humanID-Verified Role Detected: Please make sure the humanID-Verified role is ranked under the humanID Verification bot Role.')
@@ -160,7 +158,7 @@ async def hello(interaction: discord.Interaction):
 async def verify(interaction: discord.Interaction):
     channels = discord.utils.get(interaction.guild.channels, name='logs')
     if not channels:
-        channel = await interaction.guild.create_text_channel('logs')
+        channels = await interaction.guild.create_text_channel('logs')
 
     author = interaction.user
     serverId = str(interaction.guild.id)
