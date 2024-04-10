@@ -66,6 +66,8 @@ async def on_member_join(member):
     # Sends the member a welcome message that mentions the server name and the member
     # Get the "get-verified" channel from the server and sends a reference to user DM
     get_verified_channel = discord.utils.get(member.guild.channels, name="get-verified")
+    if not get_verified_channel:
+        get_verified_channel = await member.guild.create_text_channel('get-verified')
     server_name = member.guild.name
     await member.send(
         f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
@@ -77,8 +79,9 @@ async def on_member_join(member):
 async def hello(interaction: discord.Interaction):
     member = interaction.user
     get_verified_channel = discord.utils.get(member.guild.channels, name="get-verified")
-    await interaction.response.send_message(
-        f"""To get started, {member.mention}, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
+    if not get_verified_channel:
+        get_verified_channel = await member.guild.create_text_channel('get-verified')
+    await interaction.response.send_message(f"""To get started, {member.mention}, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
 """)
 
 
@@ -127,7 +130,9 @@ async def on_guild_join(guild):
 
 async def setupVerifiedRole(guild):
     # Getting the Verified Role
-    verification_channel = discord.utils.get(guild.channels, name='get-verified')
+    verification_channel = discord.utils.get(guild.channels, name='get-verified') 
+    if not verification_channel:
+        verification_channel = await guild.create_text_channel('get-verified')
     verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
     if verified_role:
         await verification_channel.send(
@@ -174,7 +179,7 @@ async def hello(interaction: discord.Interaction):
 async def verify(interaction: discord.Interaction):
     channels = discord.utils.get(interaction.guild.channels, name='logs')
     if not channels:
-        channel = await interaction.guild.create_text_channel('logs')
+        channels = await interaction.guild.create_text_channel('logs')
 
     author = interaction.user
     serverId = str(interaction.guild.id)
@@ -182,7 +187,10 @@ async def verify(interaction: discord.Interaction):
 
     if interaction.channel.name != 'get-verified':
         # message was not sent in the allowed channel
-        channels = discord.utils.get(interaction.guild.channels, name='get-verified').id
+        channels = discord.utils.get(interaction.guild.channels, name='get-verified')
+        if not channels:
+            channels = await interaction.guild.create_text_channel('get-verified')
+        channels = channels.id
         await interaction.response.send_message(
             'This command can only be used in the <#{}> channel.'.format(str(channels)),
             ephemeral=True
@@ -196,8 +204,7 @@ async def verify(interaction: discord.Interaction):
     )
     if response.status_code == 400:
         await interaction.response.send_message(
-            'Your server is not yet registered with humanID. Please ask an admin to go to <{}> to register.\n\
-            For a more detailed step-by-step walk-through, go to <{}>.'
+            'Your server is not yet registered with humanID. Please ask an admin to go to <{}> to register.\nFor a more detailed step-by-step walk-through, go to <{}>.'
             .format(dc_url, guide_url),
             ephemeral=True
         )
