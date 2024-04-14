@@ -67,7 +67,13 @@ async def on_member_join(member):
     # Get the "get-verified" channel from the server and sends a reference to user DM
     get_verified_channel = discord.utils.get(member.guild.channels, name="get-verified")
     if not get_verified_channel:
-        get_verified_channel = await member.guild.create_text_channel('get-verified')
+        try:
+            get_verified_channel = await member.guild.create_text_channel('get-verified')
+        except discord.Forbidden:
+            await member.send(
+                f""" Hey {member.mention}! You do not have permissions to create the #get-verified channel. Please ask an admin to create the channel for you so you can start using the bot."""
+            )
+            return
     server_name = member.guild.name
     await member.send(
         f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
@@ -80,7 +86,13 @@ async def hello(interaction: discord.Interaction):
     member = interaction.user
     get_verified_channel = discord.utils.get(member.guild.channels, name="get-verified")
     if not get_verified_channel:
-        get_verified_channel = await member.guild.create_text_channel('get-verified')
+        try:
+            get_verified_channel = await member.guild.create_text_channel('get-verified')
+        except discord.Forbidden:
+            await member.send(
+                f""" Hey {member.mention}! You do not have permissions to create the #get-verified channel. Please ask an admin to create the channel for you so you can start using the bot."""
+            )
+            return
     await interaction.response.send_message(f"""To get started, {member.mention}, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
 """)
 
@@ -227,11 +239,15 @@ async def verify(interaction: discord.Interaction):
     hashedId = userId;
 
     # Send the humanID link that is unique to the current discord server
-    await interaction.response.send_message(
-        'Please use this link to verify: {}'.format(
+    if (FRONTEND_URL == 'http://host.docker.internal:3000'):
+        message = 'Please use this link to verify: {}'.format(url)
+    else:
+        message = 'Please use this link to verify: {}'.format(
             # TODO hash id
             FRONTEND_URL + '?server={}&url={}'.format(interaction.guild.id, url)
-        ),
+        )
+    await interaction.response.send_message(
+        message,
         ephemeral=True
     )
     success = False
