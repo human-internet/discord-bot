@@ -237,13 +237,12 @@ async def verify(interaction: discord.Interaction):
     hashedId = userId;
 
     # Send the humanID link that is unique to the current discord server
-    message = 'Please use this link to verify: {}'.format(
-        # TODO hash id
-        FRONTEND_URL + '?server={}&url={}'.format(interaction.guild.id, url)
-    )
     await interaction.response.send_message(
-        message,
-        ephemeral=True
+        'Please use this link to verify: {}'.format(
+            # TODO hash id
+            FRONTEND_URL + '?server={}&url={}'.format(interaction.guild.id, url)
+        ),
+        ephiemeral=True
     )
     success = False
     outcome = 'Failed to verify your identity. Please try again.'
