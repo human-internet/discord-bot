@@ -242,7 +242,7 @@ async def verify(interaction: discord.Interaction):
             # TODO hash id
             FRONTEND_URL + '?server={}&url={}'.format(interaction.guild.id, url)
         ),
-        ephiemeral=True
+        ephemeral=True
     )
     success = False
     outcome = 'Failed to verify your identity. Please try again.'
