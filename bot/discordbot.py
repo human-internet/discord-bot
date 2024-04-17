@@ -112,9 +112,6 @@ async def hello(interaction: discord.Interaction):
 async def on_guild_join(guild):
     get_verified_channel = await ensure_text_channel(guild, None, "get-verified")
     log_channel = await ensure_text_channel(guild, None, "logs")
-    log_channel = discord.utils.get(guild.channels, name='logs')
-    if not log_channel:
-        log_channel = await guild.create_text_channel('logs')
     await setupVerifiedRole(guild)
     # everyone_channels = []
     # for channel in guild.channels:
