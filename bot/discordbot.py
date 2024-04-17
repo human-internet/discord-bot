@@ -66,7 +66,7 @@ async def ensure_text_channel(member, interaction: discord.Interaction, channel_
         return channel
     except discord.Forbidden as e:
         print("Error: ", e)
-        message = f""" Hey {member.mention}! You do not have permissions to create the #{channel_name} channel. Please ask an admin to create the channel for you so you can start using the bot."""
+        message = f"""Reminder: The humanID Verification bot requires administrator permissions to create the get-verified channel and assign the humanID-Verified role. Please ensure the bot has the necessary permissions to complete the verification process. If it does not, you may have to reinstall the bot with the correct permissions."""
         if interaction is None:
             await member.send(message)
         else:
