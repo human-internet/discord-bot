@@ -57,15 +57,17 @@ async def ensure_text_channel(member, interaction: discord.Interaction, channel_
     # Return the channel if it exists already
     if channel:
         return channel
-    
     try:
         if is_guild:
             channel = await member.create_text_channel(channel_name)
         else:
             channel = await member.guild.create_text_channel(channel_name)
         return channel
-    except discord.Forbidden as e:
-        message = f"""Reminder: The humanID Verification bot requires administrator permissions to create the get-verified channel and assign the humanID-Verified role. Please ensure the bot has the necessary permissions to complete the verification process. If it does not, you may have to reinstall the bot with the correct permissions."""
+    except discord.Forbidden:
+        message = f"""Reminder: The humanID Verification bot requires administrator
+        permissions to create the get-verified channel and assign the humanID-Verified role.
+        Please ensure the bot has the necessary permissions to complete the verification process.
+        If it does not, you may have to reinstall the bot with the correct permissions."""
         if interaction is None:
             await member.send(message)
         else:
