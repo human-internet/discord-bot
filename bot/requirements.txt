@@ -1,4 +1,5 @@
 discord
 pyshorteners
 python-dotenv
+bs4
 

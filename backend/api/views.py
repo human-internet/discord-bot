@@ -57,7 +57,7 @@ def addServer(request):
     if duplicate:
         # we replace the client id/secret, if the request sender is the same previous client
         servers = Server.objects.get(serverId=serverId)
-        previousEmail = servers['clientEmail']
+        previousEmail = servers.clientEmail
         if previousEmail != clientEmail:
             return Response("This server already has an associated credential", status=400)
     else:
