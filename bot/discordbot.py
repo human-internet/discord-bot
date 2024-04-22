@@ -48,6 +48,10 @@ dc_url = 'https://developers.human-id.org/'
 # Discord Bot Integration Guide
 guide_url = 'https://docs.human-id.org/discord-bot-integration-guide'
 
+# Creates the text channel if it doesnt exist already
+# In cases where the bot does not have the necessary permissions, it will send a message to the user if you pass the interaction as a parameter
+# In order to avoid sending a user a message, you can pass None. This is helpfu for cases like the on_member_join function where it is not necessary
+# to send a message to the user as they are already joining the server.
 async def ensure_text_channel(member, interaction: discord.Interaction, channel_name):
     is_guild = isinstance(member, discord.Guild)
     if is_guild:
@@ -63,15 +67,11 @@ async def ensure_text_channel(member, interaction: discord.Interaction, channel_
         else:
             channel = await member.guild.create_text_channel(channel_name)
         return channel
-    except discord.Forbidden:
-        message = "Reminder: The humanID Verification bot requires administrator permissions to create the get-verified channel and assign the humanID-Verified role. If you are the server admin, please ensure the bot has the necessary permissions to complete the verification process. If it does not, you may have to reinstall the bot with the correct permissions."
-        if interaction is None:
-            await member.send(message)
-        else:
-            try:
-                await interaction.response.send_message(message, ephemeral=True)
-            except discord.errors.CommandInvokeError:
-                await member.send(message)
+    except discord.errors.Forbidden:
+        message = message = "Reminder: The humanID Verification bot requires administrator permissions to create the get-verified channel and assign the humanID-Verified role. If you are the server admin, please ensure the bot has the necessary permissions to complete the verification process. If it does not, you may have to reinstall the bot with the correct permissions."
+        if interaction:
+            await interaction.response.send_message(message, ephemeral=True)
+        # No channel created
         return
 
 # ensures the bot is working/connected
@@ -93,8 +93,8 @@ async def on_member_join(member):
     get_verified_channel = await ensure_text_channel(member, None, "get-verified")
     server_name = member.guild.name
     await member.send(
-        f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
-""")
+            f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. Enjoy your time here!
+    """)
 
 
 # /help command that gives a list of commands
