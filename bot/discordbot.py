@@ -185,7 +185,12 @@ async def register(interaction: discord.Interaction, email:str):
     #Check if the command is used in the "get-verified" channel
     channels = discord.utils.get(interaction.guild.channels, name='get-verified')
     if not channels:
-        channels = await interaction.guild.create_text_channel('get-verified')
+        try:
+            channels = await interaction.guild.create_text_channel('get-verified')
+        except discord.Forbidden as e:
+            message = f""" Hey! You do not have permissions to create the 'get-verified' channel. Please ask an admin to create the channel for you."""
+            await interaction.response.send_message(message)
+            return
     if interaction.channel.name != 'get-verified':
         # message was not sent in the allowed channel
         await interaction.response.send_message(
@@ -202,7 +207,7 @@ async def register(interaction: discord.Interaction, email:str):
     )
     if response.status_code != 400:
         await interaction.response.send_message(
-            "The server already has have a valid credential.",
+            "The server already has a valid credential.",
             ephemeral=True
         )
         return
@@ -259,7 +264,7 @@ async def register(interaction: discord.Interaction, email:str):
                 if dup_message in response.text:
                     await interaction.response.send_message("This email is already in use or needs to be activated. Please use another one or activate it use the activation link sent to this email.")
                 else:
-                    await interaction.response.send_message("Succeed, please activate it by using the activation link sent to this email. Then /verify could be used.")
+                    await interaction.response.send_message("Succeed, please activate it by using the activation link that was sent to this email. Then /verify could be used.")
             except:
                 await interaction.response.send_message("An error occurred while processing your request. Please try agian later or contact with humanID.")
         else:
