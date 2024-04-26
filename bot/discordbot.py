@@ -52,20 +52,20 @@ guide_url = 'https://docs.human-id.org/discord-bot-integration-guide'
 # In cases where the bot does not have the necessary permissions, it will send a message to the user if you pass the interaction as a parameter
 # In order to avoid sending a user a message, you can pass None. This is helpfu for cases like the on_member_join function where it is not necessary
 # to send a message to the user as they are already joining the server.
-async def ensure_text_channel(member, interaction: discord.Interaction, channel_name):
-    is_guild = isinstance(member, discord.Guild)
+async def ensure_text_channel(entity, interaction: discord.Interaction, channel_name):
+    is_guild = isinstance(entity, discord.Guild)
     if is_guild:
-        channel = discord.utils.get(member.channels, name=channel_name)
+        channel = discord.utils.get(entity.channels, name=channel_name)
     else:
-        channel = discord.utils.get(member.guild.channels, name=channel_name)
+        channel = discord.utils.get(entity.guild.channels, name=channel_name)
     # Return the channel if it exists already
     if channel:
         return channel
     try:
         if is_guild:
-            channel = await member.create_text_channel(channel_name)
+            channel = await entity.create_text_channel(channel_name)
         else:
-            channel = await member.guild.create_text_channel(channel_name)
+            channel = await entity.guild.create_text_channel(channel_name)
         return channel
     except discord.errors.Forbidden:
         message = "Reminder: The humanID Verification bot requires administrator permissions to create the get-verified channel and assign the humanID-Verified role. If you are the server admin, please ensure the bot has the necessary permissions to complete the verification process. If it does not, you may have to reinstall the bot with the correct permissions."
