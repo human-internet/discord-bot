@@ -262,9 +262,9 @@ async def register(interaction: discord.Interaction, email:str):
                 response.raise_for_status()  
                 dup_message = 'This email is already in use. Login instead?'   #message that imply a duplicate email
                 if dup_message in response.text:
-                    await interaction.response.send_message("This email is already in use or needs to be activated. Please use another one or activate it use the activation link sent to this email.")
+                    await interaction.response.send_message("This email is already in use or needs to be activated. Please use another one or activate it using the activation link.")
                 else:
-                    await interaction.response.send_message("Succeed, please activate it by using the activation link that was sent to this email. Then /verify could be used.")
+                    await interaction.response.send_message("Success! Please register by clicking the activation link that was sent to this email. Then you will be eligible to use the /verify command.")
             except:
                 await interaction.response.send_message("An error occurred while processing your request. Please try agian later or contact with humanID.")
         else:

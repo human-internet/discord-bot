@@ -105,7 +105,7 @@ def getRedirect(request):
 
     # generate weblogin url
     response = requests.post(
-        'https://api.human-id.org/v1/server/users/web-login',
+        env['WEB_LOGIN_URL'],
         headers=headers,
     )
     if response.status_code != 200:
