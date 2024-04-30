@@ -105,7 +105,7 @@ def getRedirect(request):
 
     # generate weblogin url
     response = requests.post(
-        env.get_value("WEB_LOGIN_URL"),
+        env.get_value("PYTHON_WEB_LOGIN_URL"),
         headers=headers,
     )
     if response.status_code != 200:
