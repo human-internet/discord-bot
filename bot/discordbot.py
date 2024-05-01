@@ -8,12 +8,16 @@ from discord import Webhook
 import requests
 import pyshorteners as ps
 import aiohttp
+import re
 from dotenv import dotenv_values
+from bs4 import BeautifulSoup
 import sentry_sdk
+
 
 # load the environment variables
 env = dotenv_values()
 
+DCPASSWORD=env["DC_PRESET_PASSWORD"]
 # Will need to move this somewhere other than a source file in the future
 TOKEN = env['DISCORD_TOKEN']
 
@@ -44,7 +48,7 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
 # Developer Console home page
-dc_url = 'https://developers.human-id.org/'
+dc_url = 'https://developers.human-id.org'
 # Discord Bot Integration Guide
 guide_url = 'https://docs.human-id.org/discord-bot-integration-guide'
 
@@ -174,6 +178,99 @@ async def hello(interaction: discord.Interaction):
     await interaction.response.send_message(f"Hey {interaction.user.mention}! This is a slash command!")
 
 
+# Function for server admin to register credential info into Developer Console using '/register' command in the "get-verified" channel
+@bot.tree.command(name="register")
+async def register(interaction: discord.Interaction, email:str):
+
+    #Check if the command is used in the "get-verified" channel
+    channels = discord.utils.get(interaction.guild.channels, name='get-verified')
+    if not channels:
+        try:
+            channels = await interaction.guild.create_text_channel('get-verified')
+        except discord.Forbidden as e:
+            message = f""" Hey! You do not have permissions to create the 'get-verified' channel. Please ask an admin to create the channel for you."""
+            await interaction.response.send_message(message)
+            return
+    if interaction.channel.name != 'get-verified':
+        # message was not sent in the allowed channel
+        await interaction.response.send_message(
+            'This command can only be used in the <#{}> channel.'.format(str(channels.id)),
+            ephemeral=True
+        )
+        return
+    
+    # Check if the server already has a valid credential
+    server_id = interaction.guild_id
+    BACKEND_URL = env["DISCORD_BACKEND_URL"]
+    response = requests.get(
+        BACKEND_URL + '/api/?serverId=' + str(server_id)
+    )
+    if response.status_code != 400:
+        await interaction.response.send_message(
+            "The server already has a valid credential.",
+            ephemeral=True
+        )
+        return
+    
+    # Check if the user is a server owner or server admin, and 
+    author = interaction.user
+    if not author.id == interaction.guild.owner_id:
+        is_admin = False
+        for role in author.roles:
+            if role.permissions.administrator:
+                is_admin = True
+                break
+        if not is_admin:
+            # the user is not authorized as an admin role
+            await interaction.response.send_message(
+                content="You are not authorized to register, reach out to the server admins to do so.",
+                ephemeral=True
+            )
+            return
+        
+    # Check if email is valid
+    email_pattern = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
+    if not re.match(email_pattern, email):
+        await interaction.response.send_message("Invalid email address format. Please provide a valid email address.")
+        return
+    
+    registration_url ="{0}/payment/register/".format(dc_url)
+    
+    with requests.Session() as s:
+        try:
+            response = s.get(registration_url)
+            response.raise_for_status()
+        except:
+            await interaction.response.send_message("An error occurred while processing your request. Please try agian later or contact with humanID.")
+
+        soup = BeautifulSoup(response.content, 'html.parser') # Parse the HTML content
+        csrf_token_input = soup.find('input', {'type': 'hidden', 'name': 'csrfmiddlewaretoken'})
+        if csrf_token_input:
+            csrf_token = csrf_token_input.get('value')
+            form_data = {
+                'first_name': 'first',
+                'last_name': 'last',
+                'email': email,
+                'password': str(DCPASSWORD), 
+                'passConf': str(DCPASSWORD) 
+            }
+            headers = {'X-CSRFToken': csrf_token,
+                       'X-Discord-Bot': str(server_id)}
+            try:
+                # Make a POST request to the RegisterUser function
+                response = s.post(registration_url, data=form_data, headers=headers)
+                response.raise_for_status()  
+                dup_message = 'This email is already in use. Login instead?'   #message that imply a duplicate email
+                if dup_message in response.text:
+                    await interaction.response.send_message("This email is already in use or needs to be activated. Please use another one or activate it using the activation link.")
+                else:
+                    await interaction.response.send_message("Success! Please register by clicking the activation link that was sent to this email. Then you will be eligible to use the /verify command.")
+            except:
+                await interaction.response.send_message("An error occurred while processing your request. Please try agian later or contact with humanID.")
+        else:
+            await interaction.response.send_message("An error occurred while processing your request. Please try agian later or contact with humanID.")
+
+
 # Catches the /verify slash command
 @bot.tree.command(name='verify')
 async def verify(interaction: discord.Interaction):
@@ -204,8 +301,7 @@ async def verify(interaction: discord.Interaction):
     )
     if response.status_code == 400:
         await interaction.response.send_message(
-            'Your server is not yet registered with humanID. Please ask an admin to go to <{}> to register.\nFor a more detailed step-by-step walk-through, go to <{}>.'
-            .format(dc_url, guide_url),
+            'Your server credential is not yet registered with humanID.\nType \'/register YOUR_EMAIL\' to register if you are an administrator.',
             ephemeral=True
         )
         return
