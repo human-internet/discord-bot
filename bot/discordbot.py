@@ -330,6 +330,14 @@ async def verify(interaction: discord.Interaction):
 
     # hash id here TODO
     hashedId = userId;
+    
+    # Check if the user has already verified
+    if "humanID-Verified" in [role.name for role in author.roles]:
+        await interaction.response.send_message(
+            'You are already verified on this server.',
+            ephemeral=True
+        )
+        return
 
     # Send the humanID link that is unique to the current discord server
     await interaction.response.send_message(
