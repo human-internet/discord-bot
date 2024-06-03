@@ -57,26 +57,35 @@ guide_url = 'https://docs.human-id.org/discord-bot-integration-guide'
 # In order to avoid sending a user a message, you can pass None. This is helpfu for cases like the on_member_join function where it is not necessary
 # to send a message to the user as they are already joining the server.
 async def ensure_text_channel(entity, interaction: discord.Interaction, channel_name):
-    is_guild = isinstance(entity, discord.Guild)
-    if is_guild:
-        channel = discord.utils.get(entity.channels, name=channel_name)
-    else:
-        channel = discord.utils.get(entity.guild.channels, name=channel_name)
-    # Return the channel if it exists already
+    # Determine the correct context to search for or create the channel
+    guild = entity if isinstance(entity, discord.Guild) else entity.guild
+
+    # Attempt to find the channel in the guild
+    channel = discord.utils.get(guild.channels, name=channel_name)
     if channel:
-        return channel
+        return channel  # Return the channel if it already exists
+ 
     try:
-        if is_guild:
-            channel = await entity.create_text_channel(channel_name)
-        else:
-            channel = await entity.guild.create_text_channel(channel_name)
+        # Attempt to create the channel
+        channel = await guild.create_text_channel(channel_name)
         return channel
+    # Account for if the bot does not have the necessary permissions to create the channel
     except discord.errors.Forbidden:
-        message = "Reminder: The humanID Verification bot requires administrator permissions to create the get-verified channel and assign the humanID-Verified role. If you are the server admin, please ensure the bot has the necessary permissions to complete the verification process. If it does not, you may have to reinstall the bot with the correct permissions."
+        message = ("Reminder: The humanID Verification bot requires administrator permissions "
+                   "to create the get-verified channel and assign the humanID-Verified role. If"
+                    " you are the server admin, please ensure the bot has the necessary permissions"
+                    " to complete the verification process. If it does not, you may have to reinstall"
+                    " the bot with the correct permissions."
+                    )     
         if interaction:
             await interaction.response.send_message(message, ephemeral=True)
-        # No channel created
-        return
+        else:
+            # TODO: Is this the right behavior? How to account for cases if the bot does not have the necessary permissions
+            # and we lack an interaction to send a message to the user?
+            entity.send(message)
+
+        # TODO: What to return? No channel object available so we have to account for that in every other call
+        return None
 
 # ensures the bot is working/connected
 @bot.event
@@ -94,11 +103,16 @@ async def on_member_join(member):
     # This function will be called when a new member joins the server
     # Sends the member a welcome message that mentions the server name and the member
     # Get the "get-verified" channel from the server and sends a reference to user DM
-    get_verified_channel = await ensure_text_channel(member, None, "get-verified")
-    server_name = member.guild.name
-    await member.send(
-            f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. Enjoy your time here!
-    """)
+
+    # Ensure that member is apart of the guild
+    if isinstance(member, discord.Member):
+        get_verified_channel = await ensure_text_channel(member, None, "get-verified")
+        server_name = member.guild.name
+        if get_verified_channel:
+            await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. Enjoy your time here!
+                """)
+    else:
+        print("Received a member join event for a non-guild context.")
 
 
 # /help command that gives a list of commands
@@ -106,8 +120,9 @@ async def on_member_join(member):
 async def hello(interaction: discord.Interaction):
     member = interaction.user
     get_verified_channel = await ensure_text_channel(member, interaction, "get-verified")
-    await interaction.response.send_message(f"""To get started, {member.mention}, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
-""")
+    if get_verified_channel:
+        await interaction.response.send_message(f"""To get started, {member.mention}, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. If you have any questions or need assistance, don't hesitate to reach out to humanID at discord@human-id.org. Replies to this message do not reach humanID. Enjoy your time here!
+    """)
 
 
 # When joining a server
@@ -144,12 +159,16 @@ async def on_guild_join(guild):
             send_messages=True
         )
     }
-    await get_verified_channel.edit(overwrites=overwrites)
+    if get_verified_channel:
+        await get_verified_channel.edit(overwrites=overwrites)
 
 
 async def setupVerifiedRole(guild):
     # Getting the Verified Role
     verification_channel = await ensure_text_channel(guild, None, "get-verified")
+    # Have to account for cases when the bot does not have the necessary permissions to create the channel
+    if not verification_channel:
+        return
     verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
     if verified_role:
         await verification_channel.send(
@@ -296,6 +315,8 @@ async def verify(interaction: discord.Interaction):
     if interaction.channel.name != 'get-verified':
         # message was not sent in the allowed channel
         channels = await ensure_text_channel(interaction.user, interaction, "get-verified")
+        if not channels:
+            return
         channels = channels.id
         await interaction.response.send_message(
             'This command can only be used in the <#{}> channel.'.format(str(channels)),
