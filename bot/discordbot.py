@@ -18,7 +18,6 @@ import sentry_sdk
 env = dotenv_values()
 
 DCPASSWORD=env["DC_PRESET_PASSWORD"]
-# Will need to move this somewhere other than a source file in the future
 TOKEN = env['DISCORD_TOKEN']
 
 SENTRY_DSN = env['DISCORD_SENTRY_DSN']
@@ -78,13 +77,7 @@ async def ensure_text_channel(entity, interaction: discord.Interaction, channel_
                     " the bot with the correct permissions."
                     )     
         if interaction:
-            await interaction.response.send_message(message, ephemeral=True)
-        else:
-            # TODO: Is this the right behavior? How to account for cases if the bot does not have the necessary permissions
-            # and we lack an interaction to send a message to the user?
-            entity.send(message)
-
-        # TODO: What to return? No channel object available so we have to account for that in every other call
+            await interaction.response.send_message(message, ephemeral=False)
         return None
 
 # ensures the bot is working/connected
@@ -105,14 +98,12 @@ async def on_member_join(member):
     # Get the "get-verified" channel from the server and sends a reference to user DM
 
     # Ensure that member is apart of the guild
-    if isinstance(member, discord.Member):
-        get_verified_channel = await ensure_text_channel(member, None, "get-verified")
-        server_name = member.guild.name
-        if get_verified_channel:
-            await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. Enjoy your time here!
-                """)
-    else:
-        print("Received a member join event for a non-guild context.")
+    get_verified_channel = await ensure_text_channel(member, None, "get-verified")
+    server_name = member.guild.name
+    if get_verified_channel:
+        await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. Enjoy your time here!
+            """)
+
 
 
 # /help command that gives a list of commands
@@ -132,7 +123,11 @@ async def hello(interaction: discord.Interaction):
 @bot.event
 async def on_guild_join(guild):
     get_verified_channel = await ensure_text_channel(guild, None, "get-verified")
+    if not get_verified_channel:
+        return
     log_channel = await ensure_text_channel(guild, None, "logs")
+    if not log_channel:
+        return
     await setupVerifiedRole(guild)
     # everyone_channels = []
     # for channel in guild.channels:
@@ -307,7 +302,8 @@ async def register(interaction: discord.Interaction, email:str):
 @bot.tree.command(name='verify')
 async def verify(interaction: discord.Interaction):
     channels = await ensure_text_channel(interaction.user, interaction, "logs")
-
+    if not channels:
+        return
     author = interaction.user
     serverId = str(interaction.guild.id)
     userId = str(author.id)
