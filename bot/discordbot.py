@@ -108,7 +108,7 @@ async def on_member_join(member):
 
 # /help command that gives a list of commands
 @bot.tree.command(name="help")
-async def hello(interaction: discord.Interaction):
+async def help(interaction: discord.Interaction):
     member = interaction.user
     get_verified_channel = await ensure_text_channel(member, interaction, "get-verified")
     if get_verified_channel:
@@ -337,6 +337,12 @@ async def verify(interaction: discord.Interaction):
             ephemeral=True
         )
         return
+    elif response.status_code != 200:
+        await interaction.response.send_message(
+            'Unknown error occured, please try again later.',
+            ephemeral=True
+        )
+        return
     resJson = response.json()
     requestId = resJson['requestId']
     url = resJson['url']
@@ -427,6 +433,12 @@ async def verify(interaction: discord.Interaction):
 
     await channels.send(embed=embed)
 
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send(f"Command not found. Update your discord to the latest version and use `/help` to see the list of available commands.")
+    else:
+        await ctx.send(f"An error occurred: {str(error)}")
 
 # -----------------------------------Version 2 - Setup----------------------------------------
 # Sets up the configuration the admin would like
