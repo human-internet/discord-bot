@@ -402,7 +402,8 @@ async def verify(interaction: discord.Interaction):
                     BACKEND_URL + '/api/removeEntry/?requestId={}'.format(requestId)
                 )
             except discord.Forbidden:
-                outcome = "I don't have the permission to add the humanID-Verified role, please contact humanID at discord@human-id.org."
+                outcome = "I don't have the permission to add the 'humanID-Verified' role. Please contact the admins to give this bot higher privileges than the 'humanID-Verified' role."
+                    
             except discord.HTTPException as e:
                 outcome = "An error occurred while trying to add the humanID-Verified role: {}".format(e)
     await interaction.edit_original_response(content=outcome)
