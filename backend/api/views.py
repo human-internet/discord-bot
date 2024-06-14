@@ -41,12 +41,12 @@ def addServer(request):
     body = json.loads(request.body)
     if 'serverId' not in body:
         return Response("The server id is required", status=400)
-
     elif 'clientId' not in body:
         return Response("The client id is required", status=400)
-
     elif 'secret' not in body:
         return Response("The client secret is required", status=400)
+    elif 'clientEmail' not in body:
+        return Response("The client email is required", status=400)
 
     clientEmail = body['clientEmail']
     serverId = body['serverId']
@@ -55,20 +55,14 @@ def addServer(request):
 
     duplicate = Server.objects.filter(serverId=serverId).exists()
     if duplicate:
-        # we replace the client id/secret, if the request sender is the same previous client
-        servers = Server.objects.get(serverId=serverId)
-        previousEmail = servers.clientEmail
-        if previousEmail != clientEmail:
-            return Response("This server already has an associated credential", status=400)
-    else:
-        # Create an entry representing the user trying to verify
-        Server.objects.create(
-            serverId=serverId,
-            clientId=clientId,
-            clientSecret=clientSecret,
-            clientEmail=clientEmail
-        )
-
+        return Response("This server already has an associated credential", status=400)
+    # Create an entry representing the user trying to verify; we replace the client id/secret if the request sender email is the same
+    Server.objects.create(
+        serverId=serverId,
+        clientId=clientId,
+        clientSecret=clientSecret,
+        clientEmail=clientEmail
+    )
     return HttpResponse(status=200)
 
 """
