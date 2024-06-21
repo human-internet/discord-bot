@@ -1,4 +1,6 @@
 discord
 pyshorteners
 python-dotenv
+bs4
+sentry-sdk
 
