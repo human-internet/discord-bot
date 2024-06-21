@@ -14,9 +14,13 @@ from pathlib import Path
 import environ
 import os
 
+import sentry_sdk
+
 env = environ.Env(
     # set casting, default value
-    DEBUG=(bool, False)
+    DEBUG=(bool, False),
+    SENTRY_DSN=(str, ''),
+    SECRET_KEY=(str, '')
 )
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -26,10 +30,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-l$i4y&h#0w_#p(v#n&8p&q)s7(d*5_)%i)q3wo#6-)1$6j5(95"
+SECRET_KEY = str(env('PYTHON_SECRET_KEY'))
 
 # Take environment variables from .env file
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+SENTRY_DSN = str(env('PYTHON_SENTRY_DSN'))
+sentry_sdk.init(
+    dsn=SENTRY_DSN,
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    traces_sample_rate=1.0,
+    # Set profiles_sample_rate to 1.0 to profile 100%
+    # of sampled transactions.
+    # We recommend adjusting this value in production.
+    # profiles_sample_rate=1.0,
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(env('PYTHON_DEBUG'))

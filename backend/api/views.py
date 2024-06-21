@@ -48,22 +48,25 @@ def addServer(request):
     elif 'secret' not in body:
         return Response("The client secret is required", status=400)
 
-    #clientEmail = body['clientEmail']
+    clientEmail = body['clientEmail']
     serverId = body['serverId']
     clientId = body['clientId']
     clientSecret = body['secret']
 
     duplicate = Server.objects.filter(serverId=serverId).exists()
     if duplicate:
-        # TODO do we replace the client id/secret?
-        return Response("This server already has an associated credential", status=400)
-
+        # we replace the client id/secret, if the request sender is the same previous client
+        servers = Server.objects.get(serverId=serverId)
+        previousEmail = servers.clientEmail
+        if previousEmail != clientEmail:
+            return Response("This server already has an associated credential", status=400)
     else:
         # Create an entry representing the user trying to verify
         Server.objects.create(
             serverId=serverId,
             clientId=clientId,
             clientSecret=clientSecret,
+            clientEmail=clientEmail
         )
 
     return HttpResponse(status=200)
@@ -102,7 +105,7 @@ def getRedirect(request):
 
     # generate weblogin url
     response = requests.post(
-        'https://api.human-id.org/v1/server/users/web-login',
+        env.get_value("PYTHON_WEB_LOGIN_URL"),
         headers=headers,
     )
     if response.status_code != 200:
