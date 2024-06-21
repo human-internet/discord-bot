@@ -48,6 +48,7 @@ tree = app_commands.CommandTree(client)
 
 # Developer Console home page
 dc_url = 'https://developers.human-id.org'
+# dc_url = ' http://host.docker.internal:7001'
 # Discord Bot Integration Guide
 guide_url = 'https://docs.human-id.org/discord-bot-integration-guide'
 
@@ -108,7 +109,7 @@ async def on_member_join(member):
 
 # /help command that gives a list of commands
 @bot.tree.command(name="help")
-async def help(interaction: discord.Interaction):
+async def help_command(interaction: discord.Interaction):
     member = interaction.user
     get_verified_channel = await ensure_text_channel(member, interaction, "get-verified")
     if get_verified_channel:
@@ -268,8 +269,8 @@ async def register(interaction: discord.Interaction, email:str):
             response = s.get(registration_url)
             response.raise_for_status()
         except:
-            await interaction.response.send_message("An error occurred while processing your request. Please try agian later or contact with humanID.")
-
+            await interaction.response.send_message("An error occurred while processing your request. Please try agian later or contact with humanID. aaa")
+            return
         soup = BeautifulSoup(response.content, 'html.parser') # Parse the HTML content
         csrf_token_input = soup.find('input', {'type': 'hidden', 'name': 'csrfmiddlewaretoken'})
         if csrf_token_input:
@@ -295,7 +296,7 @@ async def register(interaction: discord.Interaction, email:str):
             except:
                 await interaction.response.send_message("An error occurred while processing your request. Please try agian later or contact with humanID.")
         else:
-            await interaction.response.send_message("An error occurred while processing your request. Please try agian later or contact with humanID.")
+            await interaction.response.send_message("Registration denied. Please try again later or contact with humanID.")
 
 
 # Catches the /verify slash command
@@ -437,7 +438,7 @@ async def verify(interaction: discord.Interaction):
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
-        await ctx.send(f"Command not found. Update your discord to the latest version and use `/help` to see the list of available commands.")
+        await ctx.send("Command not found. Update your discord to the latest version and use `/help` to see the list of available commands.")
     else:
         await ctx.send(f"An error occurred: {str(error)}")
 
