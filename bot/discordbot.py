@@ -269,7 +269,7 @@ async def register(interaction: discord.Interaction, email:str):
             response = s.get(registration_url)
             response.raise_for_status()
         except:
-            await interaction.response.send_message("An error occurred while processing your request. Please try agian later or contact with humanID. aaa")
+            await interaction.response.send_message("An error occurred while processing your request. Please try agian later or contact with humanID.")
             return
         soup = BeautifulSoup(response.content, 'html.parser') # Parse the HTML content
         csrf_token_input = soup.find('input', {'type': 'hidden', 'name': 'csrfmiddlewaretoken'})
