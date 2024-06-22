@@ -157,6 +157,8 @@ async def on_guild_join(guild):
     }
     if get_verified_channel:
         await get_verified_channel.edit(overwrites=overwrites)
+    await get_verified_channel.send("""To gain full access to this Discord server, please enter '/verify' in the chat box to initiate the verification process. Rest assured, we do not retain any of your private information during this process. If you encounter any issue, please contact humanID at discord@human-id.org. Replies to this message do not reach humanID.
+                                """)
 
 
 async def setupVerifiedRole(guild):
@@ -196,8 +198,6 @@ async def setupVerifiedRole(guild):
             f"Please ensure the @humanID-Verified role has appropriate permissions within the server."
         )
         await verification_channel.send(error_message)
-    await verification_channel.send("""To gain full access to this Discord server, please enter '/verify' in the chat box to initiate the verification process. Rest assured, we do not retain any of your private information during this process. If you encounter any issue, please contact humanID at discord@human-id.org. Replies to this message do not reach humanID.
-                                    """)
 
 
 # test simple slash commandac
@@ -395,18 +395,20 @@ async def verify(interaction: discord.Interaction):
 
     if success:
         roles = discord.utils.get(interaction.guild.roles, name='humanID-Verified')
-        if roles:
-            try:
-                await author.add_roles(roles)
-                outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
-                requests.delete(
-                    BACKEND_URL + '/api/removeEntry/?requestId={}'.format(requestId)
-                )
-            except discord.Forbidden:
-                outcome = "I don't have the permission to add the 'humanID-Verified' role. Please contact the admins to give this bot higher privileges than the 'humanID-Verified' role."
-                    
-            except discord.HTTPException as e:
-                outcome = "An error occurred while trying to add the humanID-Verified role: {}".format(e)
+        # if no 'humanID-Verified' roles, create it again
+        if not roles:
+            await setupVerifiedRole(interaction.guild)
+            roles = discord.utils.get(interaction.guild.roles, name='humanID-Verified')
+        try:
+            await author.add_roles(roles)
+            outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
+            requests.delete(
+                BACKEND_URL + '/api/removeEntry/?requestId={}'.format(requestId)
+            )
+        except discord.Forbidden:
+            outcome = "I don't have the permission to add the 'humanID-Verified' role. Please contact the admins to give this bot higher privileges than the 'humanID-Verified' role."    
+        except discord.HTTPException as e:
+            outcome = "An error occurred while trying to add the humanID-Verified role: {}".format(e)
     await interaction.edit_original_response(content=outcome)
 
     # log verification attempt into the log channel
