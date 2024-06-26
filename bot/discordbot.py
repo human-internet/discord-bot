@@ -129,33 +129,33 @@ async def on_guild_join(guild):
     if not log_channel:
         return
     await setupVerifiedRole(guild)
-    # everyone_channels = []
-    # for channel in guild.channels:
-    #     # Check if the @everyone role has the "View Channel" permission
-    #     if channel.permissions_for(guild.default_role).view_channel:
-    #         everyone_channels.append(channel.name)
-    # if everyone_channels:
-    #     await verification_channel.send(f"Channels viewable by @everyone prior to installing humanID Discor Bot: {', '.join(everyone_channels)}")
-    #     await verification_channel.send(f"These channels are now viewable by users with @humanID-Verified role through completing the /verify command.")
-    # else:
-    #     await verification_channel.send("There are no channels viewable by @everyone in this server.")
-    # verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
-    # for channel_name in everyone_channels:
-    #     if channel_name != 'get-verified':
-    #         channel = discord.utils.get(guild.channels, name=channel_name)
-    #         await channel.set_permissions(everyone, read_messages=False, send_messages=False)
-    #         await channel.set_permissions(verified_role, read_messages=True, send_messages=True)
 
-    overwrites = {
-        guild.default_role: discord.PermissionOverwrite(
+    # Block unverified users to read/send messages in every channel
+    everyone_role = guild.default_role
+    verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
+    overwrites_everywhere = {
+        everyone_role: discord.PermissionOverwrite(
+            view_channel=False,
+            send_messages=False
+        ),
+        verified_role: discord.PermissionOverwrite(
             view_channel=True,
-            use_application_commands=True,
-            change_nickname=True,
             send_messages=True
         )
     }
-    if get_verified_channel:
-        await get_verified_channel.edit(overwrites=overwrites)
+    for channel in guild.channels:
+        await channel.edit(overwrites=overwrites_everywhere)
+
+    # Allow 'everyone' role to view and send messages in the 'get-verified' channel
+    overwrites_verified_channel = {
+        everyone_role: discord.PermissionOverwrite(
+            view_channel=True,
+            send_messages=True,
+            use_application_commands=True,
+            change_nickname=True
+        )
+    }
+    await get_verified_channel.edit(overwrites=overwrites_verified_channel)
     await get_verified_channel.send("""To gain full access to this Discord server, please enter '/verify' in the chat box to initiate the verification process. Rest assured, we do not retain any of your private information during this process. If you encounter any issue, please contact humanID at discord@human-id.org. Replies to this message do not reach humanID.
                                 """)
 
@@ -241,7 +241,7 @@ async def register(interaction: discord.Interaction, email:str):
     
     # Check if the user is a server owner or server admin, and 
     author = interaction.user
-    if not author.id == interaction.guild.owner_id:
+    if author.id != interaction.guild.owner_id:
         is_admin = False
         for role in author.roles:
             if role.permissions.administrator:
