@@ -48,7 +48,6 @@ tree = app_commands.CommandTree(client)
 
 # Developer Console home page
 dc_url = 'https://developers.human-id.org'
-# dc_url = ' http://host.docker.internal:7001'
 # Discord Bot Integration Guide
 guide_url = 'https://docs.human-id.org/discord-bot-integration-guide'
 
