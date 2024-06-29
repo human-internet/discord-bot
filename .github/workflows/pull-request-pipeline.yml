@@ -1,0 +1,23 @@
+name: Pull Request Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker images
+        run: docker-compose build -f docker-compose.prod.yml
+
+  sast:
+    needs: build
+    name: 01 - Static Application Security Testing
+    uses: ./.github/workflows/sast.yml
+    secrets: inherit
+    
