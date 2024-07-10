@@ -1,4 +1,4 @@
-FROM node:alpine as build
+FROM node:20-alpine as build
 
 WORKDIR /app
 COPY ./package.json ./
@@ -7,12 +7,10 @@ COPY . /app
 
 RUN npm run build
 
-FROM node:alpine as deploy
+FROM nginx:alpine as deploy
 
-WORKDIR /app
-COPY --from=build /app/build /app/
+WORKDIR /usr/share/nginx/html
 
+COPY --from=build /app/build /usr/share/nginx/html
 
-CMD [ "npm", "start" ]
-
-EXPOSE 3000
+COPY ./nginx.conf /etc/nginx/nginx.conf

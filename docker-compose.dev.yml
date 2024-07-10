@@ -71,8 +71,6 @@ services:
       - "host.docker.internal:host-gateway"
     restart: always
 
-
-
 networks:
   human_id:
     driver: bridge
