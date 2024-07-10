@@ -78,7 +78,7 @@ MIDDLEWARE = [
 ]
 
 # enable cors on development
-if True:
+if DEBUG is True:
     INSTALLED_APPS.append('corsheaders', )
     MIDDLEWARE.append("corsheaders.middleware.CorsMiddleware")
 
