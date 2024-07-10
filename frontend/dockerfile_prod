@@ -1,0 +1,18 @@
+FROM node:alpine as build
+
+WORKDIR /app
+COPY ./package.json ./
+RUN npm install
+COPY . /app
+
+RUN npm run build
+
+FROM node:alpine as deploy
+
+WORKDIR /app
+COPY --from=build /app/build /app/
+
+
+CMD [ "npm", "start" ]
+
+EXPOSE 3000

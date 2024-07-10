@@ -102,6 +102,8 @@ def getRedirect(request):
         env.get_value("PYTHON_WEB_LOGIN_URL"),
         headers=headers,
     )
+    # get the response mes
+
     if response.status_code != 200:
         return Response("Unable to generate url. Please double check your credentials", status=403)
 

@@ -25,6 +25,7 @@ services:
     networks:
       - human_id
     volumes:
+      - ./bot/.env:/bot/.env
       - ./bot/discordbot.py:/bot/discordbot.py
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -42,6 +43,7 @@ services:
     networks:
       - human_id
     volumes:
+      - ./frontend/.env:/app/.env
       - ./frontend/src:/app/src
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -61,6 +63,7 @@ services:
     networks:
       - human_id
     volumes:
+      - ./backend/.env:/code/.env
       - ./backend/api:/code/api
       - ./backend/backend:/code/backend
       - ./backend/sql:/code/sql
