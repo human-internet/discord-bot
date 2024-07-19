@@ -20,6 +20,8 @@ services:
     build:
       context: ./bot
       dockerfile: dockerfile
+    environment:
+      - PYTHONUNBUFFERED=1
     env_file:
       - ./bot/.env
     networks:
