@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.utils import timezone
-from django.http import HttpResponse, QueryDict
+from django.http import HttpResponse, QueryDict, JsonResponse
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 import pyshorteners as ps
@@ -27,6 +27,30 @@ def sign(userId):
 
 def verify(userId, storedId):
     return compare_digest(userId, storedId)
+
+# This function un-verifies a user in the database.
+# It sets the 'verified' field to False for the user with the given discord_id.
+@api_view(['POST'])
+def unverify_user(request):
+    discord_id = request.data.get('discord_id')
+    user = Person.objects.filter(userId=discord_id).first()
+    if user:
+        user.verified = False
+        user.save()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'failed'}, status=400)
+
+# This function verifies a user in the database.
+# It sets the 'verified' field to True for the user with the given discord_id.
+@api_view(['POST'])
+def verify_user(request):
+    discord_id = request.data.get('discord_id')
+    user = Person.objects.filter(userId=discord_id).first()
+    if user:
+        user.verified = True
+        user.save()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'failed'}, status=400)
 
 """ 
 1. Get the parameters sent in the body of the request

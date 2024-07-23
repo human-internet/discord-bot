@@ -51,6 +51,43 @@ dc_url = 'https://developers.human-id.org'
 # Discord Bot Integration Guide
 guide_url = 'https://docs.human-id.org/discord-bot-integration-guide'
 
+# Event Handler: on_member_update
+# This function is triggered whenever a member's information is updated.
+# It checks if the humanID-Verified role is added or removed and updates the user's verification status accordingly.
+@bot.event
+async def on_member_update(before, after):
+    verified_role = discord.utils.get(after.guild.roles, name='humanID-Verified')
+    if verified_role in before.roles and verified_role not in after.roles:
+        await unverify_user(after.id)
+    elif verified_role not in before.roles and verified_role in after.roles:
+        await verify_user(after.id)
+
+# Event Handler: on_member_remove
+# This function is triggered whenever a member leaves or is removed from the server.
+# It un-verifies the user by updating their status in the database.
+@bot.event
+async def on_member_remove(member):
+    await unverify_user(member.id)
+
+# This function sends a request to the backend to un-verify a user.
+# It updates the 'verified' field to False for the user with the given discord_id.
+async def unverify_user(user_id):
+    response = requests.post("http://localhost:8000/api/unverify_user/", data={"discord_id": user_id})
+    if response.status_code == 200:
+        print(f"User {user_id} unverified successfully")
+    else:
+        print(f"Failed to unverify user {user_id}")
+
+# This function sends a request to the backend to verify a user.
+# It updates the 'verified' field to True for the user with the given discord_id.
+async def verify_user(user_id):
+    response = requests.post("http://localhost:8000/api/verify_user/", data={"discord_id": user_id})
+    if response.status_code == 200:
+        print(f"User {user_id} verified successfully")
+    else:
+        print(f"Failed to verify user {user_id}")
+
+
 # Creates the text channel if it doesnt exist already
 # In cases where the bot does not have the necessary permissions, it will send a message to the user if you pass the interaction as a parameter
 # In order to avoid sending a user a message, you can pass None. This is helpfu for cases like the on_member_join function where it is not necessary
@@ -103,8 +140,6 @@ async def on_member_join(member):
     if get_verified_channel:
         await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. Enjoy your time here!
             """)
-
-
 
 # /help command that gives a list of commands
 @bot.tree.command(name="help")
