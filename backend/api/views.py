@@ -21,7 +21,6 @@ SECRET_KEY = b'pseudorandomly generated server secret key'
 AUTH_SIZE = 16
 
 def sign(userId):
-    print("info", AUTH_SIZE, SECRET_KEY)
     h = blake2b(digest_size=AUTH_SIZE, key=SECRET_KEY)
     h.update(userId)
     return h.hexdigest().encode('utf-8')
@@ -33,12 +32,9 @@ def verify(userId, storedId):
 # It deletes the entry for the user with the given discord_id.
 @api_view(['DELETE'])
 def unverify_user(request):
-    print("unverify_user called")
     user = request.query_params.get('userId')
-    print("Unverify user:", user) 
     user_id = sign(bytes(str(user), 'utf-8'))
     server_id = request.query_params.get('serverId')
-    print("Unverify signed ID:", user_id)
     
     if not user_id or not server_id:
         return Response("The user id and server id are required", status=400)
@@ -62,7 +58,6 @@ def unverify_user(request):
 
 @api_view(['PUT'])
 def addServer(request):
-    print("addServer called")
     body = json.loads(request.body)
     if 'serverId' not in body:
         return Response("The server id is required", status=400)
@@ -100,7 +95,6 @@ def addServer(request):
 """
 @api_view(['GET'])
 def getRedirect(request):
-    print("getRedirect called")
     serverQuery = request.query_params.get('serverId', None)
 
     # Case: does not have a query
@@ -137,7 +131,6 @@ def getRedirect(request):
     return_url = resJson['webLoginUrl']
     requestId = resJson['requestId']
     short_url = ps.Shortener().tinyurl.short(return_url)
-    print(f'Server ID received: {serverQuery}')  # Print the serverId for debugging
 
     # Generate the link and send it back
     return Response({
@@ -154,14 +147,9 @@ def getRedirect(request):
 """
 @api_view(['PUT'])
 def verifyAttempt(request):
-    print("verifyAttempt called")
     userQuery = request.query_params.get('userId', None)
     reqQuery = request.query_params.get('requestId', None)
     serverId = request.query_params.get('serverId', None)
-
-    print("verify user:", userQuery)
-    signed_user = sign(bytes(str(userQuery), 'utf-8'))
-    print("Verify signed ID", signed_user)
     
     # Case: request does not have a userId
     if not userQuery:
@@ -193,20 +181,13 @@ def verifyAttempt(request):
             created=timezone.now(),
             verified=False,
         )
-    
-    serverId = request.query_params.get('serverId', None)
-    print(f'Server ID received: {serverId}')  # Print the serverId for debugging
 
     return Response(status=200)
 
 
 @api_view(['GET'])
 def checkVerify(request):
-    print("checkVerify called")
     # TODO: Check if the Discord Server ID is also present
-    serverId = request.query_params.get('serverId', None)
-    print(f'Server ID received: {serverId}')  # Print the serverId for debugging
-
     userQuery = request.query_params.get('requestId', None)
     # Case: requestID is not present
     if not userQuery:
@@ -250,7 +231,6 @@ def checkVerify(request):
 """
 @api_view(['DELETE'])
 def closeVerify(request):
-    print("closeVerify called")
     userQuery = request.query_params.get('requestId', None)
 
     # Does not have a query
@@ -269,7 +249,6 @@ def closeVerify(request):
 
 # Check if a particular humanID user is already associated with a discord user, within the scope of the bot server
 def check_server_duplicate(humanUserId, serverQuery):
-    print("check_server_duplicate called")
     associatedAccount = Person.objects.filter(humanUserId=humanUserId).exists()
     if associatedAccount:
         associatedCredentialList = Person.objects.filter(humanUserId=humanUserId)
@@ -292,11 +271,8 @@ def check_server_duplicate(humanUserId, serverQuery):
 """
 @api_view(['GET'])
 def verification_successful(request):
-    print("verification_successful called")
     serverQuery = request.query_params.get('serverId', None)
     exchangeToken = request.query_params.get('et')
-    print(f"Server ID received: {serverQuery}")  # Print the serverId for debugging
-    print(f"Exchange token received: {exchangeToken}")  # Print the exchange token for debugging
     
     if not serverQuery:
         return Response("The server id is required", status=400)

@@ -12,7 +12,6 @@ import re
 from dotenv import dotenv_values
 from bs4 import BeautifulSoup
 import sentry_sdk
-import json
 
 
 # load the environment variables
@@ -59,13 +58,6 @@ guide_url = 'https://docs.human-id.org/discord-bot-integration-guide'
 async def on_member_update(before, after):
     verified_role = discord.utils.get(after.guild.roles, name='humanID-Verified')
 
-    # Debug print to check if the method is being called
-    print("on_member_update called")
-
-    # Debug print to check the roles before and after the update
-    print(f"Roles before: {[role.name for role in before.roles]}")
-    print(f"Roles after: {[role.name for role in after.roles]}")
-
     if verified_role in before.roles and verified_role not in after.roles:
         await unverify_user(after.id, after.guild.id)
 
@@ -79,18 +71,9 @@ async def on_member_remove(member):
 # This function sends a request to the backend to un-verify a user.
 # It updates the 'verified' field to False for the user with the given discord_id.
 async def unverify_user(user_id, server_id):
-    # payload = json.dumps({"userId": f"'{user_id}'", "serverId": f"'{server_id}'"})
-    # headers = {"Content-Type": "application/json"}
-
     response = requests.delete(
         'http://backend:8000/api/unverify_user/?userId={}&serverId={}'.format(user_id, server_id)
     )
-    # response = requests.post("http://backend:8000/api/unverify_user/", data=payload, headers=headers)
-    if response.status_code == 200:
-        print(f"User {user_id} unverified successfully")
-    else:
-        print(f"Failed to unverify user {user_id}")
-
 
 # Creates the text channel if it doesnt exist already
 # In cases where the bot does not have the necessary permissions, it will send a message to the user if you pass the interaction as a parameter
@@ -340,14 +323,12 @@ async def register(interaction: discord.Interaction, email:str):
 # Catches the /verify slash command
 @bot.tree.command(name='verify')
 async def verify(interaction: discord.Interaction):
-    print("hello")
     channels = await ensure_text_channel(interaction.user, interaction, "logs")
     if not channels:
         return
     author = interaction.user
     serverId = str(interaction.guild.id)
     userId = str(author.id)
-    print("verify attempt userId", userId)
 
     if interaction.channel.name != 'get-verified':
         # message was not sent in the allowed channel
@@ -458,8 +439,6 @@ async def verify(interaction: discord.Interaction):
         description='Status: {}'.format('Success' if success else 'Failure'),
         colour=discord.Colour.dark_gold(),
     )
-
-    print("new userId", userId)
 
     embed.set_footer(
         text=datetime.datetime(
