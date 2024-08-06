@@ -306,3 +306,13 @@ def verification_successful(request):
         req.save()      
         # success
         return Response(status=200)
+
+@api_view(['DELETE'])
+def removeUser(request):
+    userid = request.query_params.get('userId', None)
+    decode_userId = sign(bytes(str(userid), 'utf-8'))
+    useridexists = Person.objects.filter(userId=decode_userId).exists()
+    if not useridexists:
+        return Response("The user id is required", status=400)
+    Person.objects.filter(userId=decode_userId).delete()
+    return Response(status=200)

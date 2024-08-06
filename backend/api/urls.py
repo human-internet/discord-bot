@@ -8,4 +8,5 @@ urlpatterns = [
     path('confirm/', views.checkVerify, name='confirmation'),
     path('removeEntry/', views.closeVerify, name='close'),
     path('verification_successful/', views.verification_successful, name='suc'),
+path('removeUser/', views.removeUser, name='removeUser'),
 ]

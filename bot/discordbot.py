@@ -583,7 +583,52 @@ async def test(ctx):
     locked = discord.ui.Button(label='test')
     view.add_item(locked)
 
-    # await message.channel.send(embed=embed, view=view)
+@bot.event
+async def on_member_update(before, after):
+    BACKEND_URL = env["DISCORD_BACKEND_URL"]
+    guild = before.guild
+    user_id = after._user.id
+
+    try:
+        if "humanID-Verified" in [role.name for role in before.roles]:
+            if "humanID-Verified" not in [role.name for role in after.roles]:
+                print(f"humanID-Verified role has been removed for user {user_id}")
+                response = requests.delete(
+                    BACKEND_URL + '/api/removeUser/?userId={}'.format(user_id)
+                )
+                if response.status_code == 200:
+                    print(f"User is deleted from the database")
+                    success = True
+                if success:
+                    log_channel = await ensure_text_channel(guild, None,"logs")
+                    if not log_channel:
+                        return
+                    await log_channel.send(f"humanID-verified role has been removed for user {before.name}")
+    except:
+        await log_channel.send(f"Error occured while deleting the {before.name} from database")
+
+@bot.event
+async def on_member_remove(member):
+    try:
+        user_id = member.id
+        BACKEND_URL = env["DISCORD_BACKEND_URL"]
+        response =    requests.delete(
+                BACKEND_URL + '/api/removeUser/?userId={}'.format(user_id)
+            )
+        if response.status_code == 200:
+            print(f"User is deleted from the database")
+            success = True
+        if success:
+            log_channel = await ensure_text_channel(member, None, "logs")
+            if not log_channel:
+                return
+            await log_channel.send(f"{member.name} has left the server or is kicked-off from the server")
+    except:
+        await log_channel.send(f"Error occured while deleting the {member.name} from database")
+
+
+
+# await message.channel.send(embed=embed, view=view)
 
 
 # async def role_positions_setup(guild):
