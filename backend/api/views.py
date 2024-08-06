@@ -313,6 +313,9 @@ def removeUser(request):
     decode_userId = sign(bytes(str(userid), 'utf-8'))
     useridexists = Person.objects.filter(userId=decode_userId).exists()
     if not useridexists:
-        return Response("The user id is required", status=400)
-    Person.objects.filter(userId=decode_userId).delete()
-    return Response(status=200)
+        return Response("User not found", status=404)
+    try:
+        Person.objects.filter(userId=decode_userId).delete()
+        return Response(status=200)
+    except Exception as e:
+        return Response(f"Error occurred while deleting user: {str(e)}", status=500)
