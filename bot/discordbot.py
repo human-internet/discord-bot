@@ -588,15 +588,14 @@ async def on_member_update(before, after):
     BACKEND_URL = env["DISCORD_BACKEND_URL"]
     guild = before.guild
     user_id = after._user.id
+    server_id = after.guild.id
 
     try:
         if "humanID-Verified" in [role.name for role in before.roles] and "humanID-Verified" not in [role.name for role in after.roles]:
-            print(f"humanID-Verified role has been removed for user {user_id}")
             response = requests.delete(
-                BACKEND_URL + '/api/removeUser/?userId={}'.format(user_id)
+                BACKEND_URL + '/api/removeUser/?userId={}&serverId={}'.format(user_id,server_id)
             )
             if response.status_code == 200:
-                print("User is deleted from the database")
                 success = True
             if success:
                 log_channel = await ensure_text_channel(guild, None,"logs")
@@ -610,12 +609,12 @@ async def on_member_update(before, after):
 async def on_member_remove(member):
     try:
         user_id = member.id
+        server_id = member.guild.id
         BACKEND_URL = env["DISCORD_BACKEND_URL"]
         response = requests.delete(
-            BACKEND_URL + '/api/removeUser/?userId={}'.format(user_id)
+            BACKEND_URL + '/api/removeUser/?userId={}&serverId={}'.format(user_id,server_id)
         )
         if response.status_code == 200:
-            print("User is deleted from the database")
             success = True
         if success:
             log_channel = await ensure_text_channel(member, None, "logs")
