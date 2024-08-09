@@ -583,7 +583,47 @@ async def test(ctx):
     locked = discord.ui.Button(label='test')
     view.add_item(locked)
 
-    # await message.channel.send(embed=embed, view=view)
+@bot.event
+async def on_member_update(before, after):
+    BACKEND_URL = env["DISCORD_BACKEND_URL"]
+    guild = before.guild
+    user_id = after._user.id
+    server_id = after.guild.id
+    log_channel = await ensure_text_channel(guild, None, "logs")
+    if not log_channel:
+        return
+    try:
+        if "humanID-Verified" in [role.name for role in before.roles] and "humanID-Verified" not in [role.name for role in after.roles]:
+            response = requests.delete(
+                BACKEND_URL + '/api/removeUser/?userId={}&serverId={}'.format(user_id,server_id)
+            )
+            if response.status_code == 200:
+                success = True
+            if success:
+                await log_channel.send(f"humanID-verified role has been removed for user {before.name}")
+    except Exception as e:
+        await log_channel.send(f"Error occurred while deleting {before.name} from database: {str(e)}")
+        
+@bot.event
+async def on_member_remove(member):
+    user_id = member.id
+    server_id = member.guild.id
+    BACKEND_URL = env["DISCORD_BACKEND_URL"]
+    log_channel = await ensure_text_channel(member, None, "logs")
+    if not log_channel:
+        return
+    try:
+        response = requests.delete(
+            BACKEND_URL + '/api/removeUser/?userId={}&serverId={}'.format(user_id,server_id)
+        )
+        if response.status_code == 200:
+            success = True
+        if success:
+            await log_channel.send(f"{member.name} has left the server or is kicked-off from the server")
+    except Exception as e:
+        await log_channel.send(f"Error occurred while deleting {member.name} from database: {str(e)}")
+
+# await message.channel.send(embed=embed, view=view)
 
 
 # async def role_positions_setup(guild):

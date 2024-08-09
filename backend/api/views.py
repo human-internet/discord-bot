@@ -306,3 +306,18 @@ def verification_successful(request):
         req.save()      
         # success
         return Response(status=200)
+
+@api_view(['DELETE'])
+def removeUser(request):
+    userid = request.query_params.get('userId', None)
+    serverId =  request.query_params.get('serverId', None)
+    decode_userId = sign(bytes(str(userid), 'utf-8'))
+    userIdExists = Person.objects.filter(userId=decode_userId).exists()
+    serverIdExists = Person.objects.filter(serverId=serverId).exists()
+    if not userIdExists and serverIdExists:
+        return Response("User id or server id not found", status=404)
+    try:
+        Person.objects.filter(userId=decode_userId, serverId=serverId).delete()
+        return Response(status=200)
+    except Exception as e:
+        return Response(f"Error occurred while deleting user: {str(e)}", status=500)
