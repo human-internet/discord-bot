@@ -609,13 +609,13 @@ async def on_member_remove(member):
     user_id = member.id
     server_id = member.guild.id
     BACKEND_URL = env["DISCORD_BACKEND_URL"]
+    log_channel = await ensure_text_channel(member, None, "logs")
     if not log_channel:
         return
     try:
         response = requests.delete(
             BACKEND_URL + '/api/removeUser/?userId={}&serverId={}'.format(user_id,server_id)
         )
-        log_channel = await ensure_text_channel(member, None, "logs")
         if response.status_code == 200:
             success = True
         if success:
