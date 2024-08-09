@@ -589,6 +589,7 @@ async def on_member_update(before, after):
     guild = before.guild
     user_id = after._user.id
     server_id = after.guild.id
+    log_channel = await ensure_text_channel(guild, None, "logs")
 
     try:
         if "humanID-Verified" in [role.name for role in before.roles] and "humanID-Verified" not in [role.name for role in after.roles]:
@@ -598,7 +599,6 @@ async def on_member_update(before, after):
             if response.status_code == 200:
                 success = True
             if success:
-                log_channel = await ensure_text_channel(guild, None,"logs")
                 if not log_channel:
                     return
                 await log_channel.send(f"humanID-verified role has been removed for user {before.name}")
@@ -614,10 +614,10 @@ async def on_member_remove(member):
         response = requests.delete(
             BACKEND_URL + '/api/removeUser/?userId={}&serverId={}'.format(user_id,server_id)
         )
+        log_channel = await ensure_text_channel(member, None, "logs")
         if response.status_code == 200:
             success = True
         if success:
-            log_channel = await ensure_text_channel(member, None, "logs")
             if not log_channel:
                 return
             await log_channel.send(f"{member.name} has left the server or is kicked-off from the server")
