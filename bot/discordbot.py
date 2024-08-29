@@ -158,9 +158,7 @@ async def on_guild_join(guild):
     await get_verified_channel.edit(overwrites=overwrites_verified_channel)
     await get_verified_channel.send("""To gain full access to this Discord server, please enter '/verify' in the chat box to initiate the verification process. Rest assured, we do not retain any of your private information during this process. If you encounter any issue, please contact humanID at discord@human-id.org. Replies to this message do not reach humanID.
                                 """)
-
-    if "sugubottest" in (member.name for member in guild.members):
-        await enable_verified_role_on_guild_join(guild)
+    await enable_verified_role_on_guild_join(guild)
 
 
 async def setupVerifiedRole(guild):
@@ -633,10 +631,7 @@ async def enable_verified_role_on_guild_join(guild):
     if not log_channel:
         return
     for member in guild.members:
-        roles = discord.utils.get(member.roles, name='humanID-Verified')
-        if not roles:
-            await setupVerifiedRole(guild)
-            roles = discord.utils.get(guild.roles, name='humanID-Verified')
+        roles = discord.utils.get(guild.roles, name='humanID-Verified')
         try:
             await member.add_roles(roles)
         except discord.HTTPException as e:
