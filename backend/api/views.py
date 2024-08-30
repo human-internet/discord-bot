@@ -271,7 +271,7 @@ def verification_successful(request):
     }
     # verify exchange token
     response = requests.post(
-        'https://api.human-id.org/v1/server/users/exchange',
+        env.get_value("PYTHON_WEB_EXCHANGE_URL"),
         headers=headers,
         json={"exchangeToken": exchangeToken.replace(" ", "+")}
     )

@@ -172,7 +172,13 @@ async def setupVerifiedRole(guild):
         await verification_channel.send(
             'Pre-existing humanID-Verified Role Detected: Please make sure the humanID-Verified role is ranked under the humanID Verification bot Role.')
     else:
-        await guild.create_role(name='humanID-Verified')
+        try:
+            await guild.create_role(name='humanID-Verified')
+        except discord.Forbidden:
+            await verification_channel.send(
+                "I don't have the permission to add the 'humanID-Verified' role. Please contact the admins to give this bot higher privileges than the 'humanID-Verified' role.",
+            )
+            return
     verified_role = discord.utils.get(guild.roles, name='humanID-Verified')
     verified_role_permissions = verified_role.permissions
     verified_role_permissions.update(
@@ -363,6 +369,18 @@ async def verify(interaction: discord.Interaction):
         )
         return
 
+    roles = discord.utils.get(interaction.guild.roles, name='humanID-Verified')
+    # if no 'humanID-Verified' roles, create it again
+    if not roles:
+        await setupVerifiedRole(interaction.guild)
+        roles = discord.utils.get(interaction.guild.roles, name='humanID-Verified')
+        if not roles:
+            await interaction.response.send_message(
+                "I don't have the permission to add the 'humanID-Verified' role. Please contact the admins to give this bot higher privileges than the 'humanID-Verified' role.",
+                ephemeral=True
+            )
+            return
+
     # Send the humanID link that is unique to the current discord server
     await interaction.response.send_message(
         'Please use this link to verify: {}'.format(
@@ -394,19 +412,12 @@ async def verify(interaction: discord.Interaction):
             break
 
     if success:
-        roles = discord.utils.get(interaction.guild.roles, name='humanID-Verified')
-        # if no 'humanID-Verified' roles, create it again
-        if not roles:
-            await setupVerifiedRole(interaction.guild)
-            roles = discord.utils.get(interaction.guild.roles, name='humanID-Verified')
         try:
             await author.add_roles(roles)
             outcome = 'Congratulations! You’ve been verified with humanID and been granted access to this server. To keep your identity secure and anonymous, all verification data is never stored and is immediately deleted upon completion.'
             requests.delete(
                 BACKEND_URL + '/api/removeEntry/?requestId={}'.format(requestId)
             )
-        except discord.Forbidden:
-            outcome = "I don't have the permission to add the 'humanID-Verified' role. Please contact the admins to give this bot higher privileges than the 'humanID-Verified' role."
         except discord.HTTPException as e:
             outcome = "An error occurred while trying to add the humanID-Verified role: {}".format(e)
     await interaction.edit_original_response(content=outcome)
