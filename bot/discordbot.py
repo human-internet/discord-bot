@@ -630,8 +630,8 @@ async def enable_verified_role_on_guild_join(guild):
     log_channel = await ensure_text_channel(guild, None, "logs")
     if not log_channel:
         return
+    roles = discord.utils.get(guild.roles, name='humanID-Verified')    
     for member in guild.members:
-        roles = discord.utils.get(guild.roles, name='humanID-Verified')
         try:
             await member.add_roles(roles)
         except discord.HTTPException as e:
