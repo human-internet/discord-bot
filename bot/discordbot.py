@@ -158,6 +158,7 @@ async def on_guild_join(guild):
     await get_verified_channel.edit(overwrites=overwrites_verified_channel)
     await get_verified_channel.send("""To gain full access to this Discord server, please enter '/verify' in the chat box to initiate the verification process. Rest assured, we do not retain any of your private information during this process. If you encounter any issue, please contact humanID at discord@human-id.org. Replies to this message do not reach humanID.
                                 """)
+    await enable_verified_role_on_guild_join(guild)
 
 
 async def setupVerifiedRole(guild):
@@ -635,6 +636,17 @@ async def on_member_remove(member):
         await log_channel.send(f"Error occurred while deleting {member.name} from database: {str(e)}")
 
 # await message.channel.send(embed=embed, view=view)
+
+async def enable_verified_role_on_guild_join(guild):
+    log_channel = await ensure_text_channel(guild, None, "logs")
+    if not log_channel:
+        return
+    roles = discord.utils.get(guild.roles, name='humanID-Verified')    
+    for member in guild.members:
+        try:
+            await member.add_roles(roles)
+        except discord.HTTPException as e:
+            await log_channel.send("An error occurred while trying to add the humanID-Verified role: {}".format(e))
 
 
 # async def role_positions_setup(guild):
