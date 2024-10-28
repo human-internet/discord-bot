@@ -44,7 +44,7 @@ def addServer(request):
     serverId = body['serverId']
     duplicate = Server.objects.filter(serverId=serverId).exists()
     if duplicate:
-        return Response("This server already has an associated credential", status=400)   
+        return Response("This server already has an associated credential", status=400) 
     elif 'clientId' not in body:
         return Response("The client id is required", status=400)
     elif 'secret' not in body:
