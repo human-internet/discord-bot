@@ -353,21 +353,7 @@ async def verify(interaction: discord.Interaction):
     resJson = response.json()
     requestId = resJson['requestId']
     url = resJson['url']
-    # Creates a db entry for the user to keep track of the link timeout
-    requests.put(
-        BACKEND_URL + '/api/start/?requestId={}&userId={}&serverId={}'.format(requestId, userId, serverId)
-    )
-
-    # hash id here TODO
-    hashedId = userId;
     
-    # Check if the user has already verified
-    if "humanID-Verified" in [role.name for role in author.roles]:
-        await interaction.response.send_message(
-            'You are already verified on this server.',
-            ephemeral=True
-        )
-        return
 
     roles = discord.utils.get(interaction.guild.roles, name='humanID-Verified')
     # if no 'humanID-Verified' roles, create it again
@@ -379,7 +365,23 @@ async def verify(interaction: discord.Interaction):
                 "I don't have the permission to add the 'humanID-Verified' role. Please contact the admins to give this bot higher privileges than the 'humanID-Verified' role.",
                 ephemeral=True
             )
-            return
+            return  
+        
+    # Check if the user has already verified
+    if "humanID-Verified" in [role.name for role in author.roles]:
+        await interaction.response.send_message(
+            'You are already verified on this server.',
+            ephemeral=True
+        )
+        return
+    
+    # hash id here TODO
+    # hashedId = userId;    
+    #     
+    # Creates a db entry for the user to keep track of the link timeout
+    requests.put(
+        BACKEND_URL + '/api/start/?requestId={}&userId={}&serverId={}'.format(requestId, userId, serverId)
+    )
 
     # Send the humanID link that is unique to the current discord server
     await interaction.response.send_message(
