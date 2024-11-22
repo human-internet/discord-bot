@@ -1,10 +1,11 @@
 arrow==1.2.2
+asgiref==3.8.1
 astroid==2.9.3
 async-generator==1.10
 attrs==21.4.0
 beautifulsoup4==4.10.0
 bs4==0.0.1
-certifi==2021.10.8
+certifi==2024.7.4
 cffi==1.15.0
 chardet==4.0.0
 charset-normalizer==2.0.11
@@ -37,11 +38,13 @@ python-dateutil==2.8.2
 PyYAML==6.0.1
 requests==2.27.1
 selenium==3.141.0
+setuptools==70.0.0
 six==1.16.0
 sniffio==1.2.0
 snowballstemmer==2.2.0
 sortedcontainers==2.4.0
 soupsieve==2.3.1
+sqlparse==0.5.1
 toml==0.10.2
 tomli==1.2.3
 trio==0.19.0
@@ -51,7 +54,7 @@ urllib3==1.26.19
 Werkzeug==2.0.2
 wrapt==1.13.3
 wsproto==1.0.0
-django
+django==4.2.15
 discord
 djangorestframework
 psycopg2-binary
