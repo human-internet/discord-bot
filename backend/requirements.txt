@@ -1,3 +1,5 @@
+aiohappyeyeballs==2.3.5
+aiohttp==3.10.2
 arrow==1.2.2
 asgiref==3.8.1
 astroid==2.9.3
@@ -12,6 +14,7 @@ charset-normalizer==2.0.11
 click==8.0.3
 cryptography==36.0.1
 Flask==2.0.2
+frozenlist==1.4.1
 h11==0.13.0
 html5validator==0.4.0
 idna==3.3
@@ -22,6 +25,7 @@ Jinja2==3.1.4
 lazy-object-proxy==1.7.1
 MarkupSafe==2.0.1
 mccabe==0.6.1
+multidict==6.0.5
 outcome==1.1.0
 packaging==21.3
 platformdirs==2.4.0
@@ -54,6 +58,7 @@ urllib3==1.26.19
 Werkzeug==2.0.2
 wrapt==1.13.3
 wsproto==1.0.0
+yarl==1.9.4
 django==4.2.15
 discord
 djangorestframework
