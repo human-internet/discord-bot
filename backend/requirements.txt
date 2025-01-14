@@ -59,7 +59,7 @@ Werkzeug==2.0.2
 wrapt==1.13.3
 wsproto==1.0.0
 yarl==1.9.4
-django==4.2.15
+django==4.2.17
 discord
 djangorestframework
 psycopg2-binary
