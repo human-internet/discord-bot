@@ -156,8 +156,21 @@ async def on_guild_join(guild):
         )
     }
     await get_verified_channel.edit(overwrites=overwrites_verified_channel)
-    await get_verified_channel.send("""To gain full access to this Discord server, please enter '/verify' in the chat box to initiate the verification process. Rest assured, we do not retain any of your private information during this process. If you encounter any issue, please contact humanID at discord@human-id.org. Replies to this message do not reach humanID.
-                                """)
+   
+    BACKEND_URL = env["DISCORD_BACKEND_URL"]
+    serverId = guild.id
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"{BACKEND_URL}/api/", params={"serverId": str(serverId)}) as response:
+            status_code = response.status
+
+    if status_code != 400:
+        if status_code == 200:
+            await get_verified_channel.send(f"""To gain full access to this Discord server, please enter '/verify' in the chat box to initiate the verification process. Rest assured, we do not retain any of your private information during this process. If you encounter any issue, please contact humanID at discord@human-id.org. Replies to this message do not reach humanID.""")
+        else:
+            await get_verified_channel.send("An error occurred while validating the server. Please try again later or contact humanID support.")
+            
+    else:
+        await get_verified_channel.send("""Your server credential is not yet registered with humanID.\nType \'/register YOUR_EMAIL\' to register if you are an administrator.""")
     await enable_verified_role_on_guild_join(guild)
 
 
