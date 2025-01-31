@@ -51,15 +51,6 @@ dc_url = 'https://developers.human-id.org'
 # Discord Bot Integration Guide
 guide_url = 'https://docs.human-id.org/discord-bot-integration-guide'
 
-# Server Registration Validation
-async def validate_server(guild):
-    BACKEND_URL = env["DISCORD_BACKEND_URL"]
-    serverId = guild.id
-    response = requests.get(
-        BACKEND_URL + '/api/?serverId=' + str(serverId)
-    )
-    return response.status_code
-
 # Creates the text channel if it doesnt exist already
 # In cases where the bot does not have the necessary permissions, it will send a message to the user if you pass the interaction as a parameter
 # In order to avoid sending a user a message, you can pass None. This is helpfu for cases like the on_member_join function where it is not necessary
@@ -165,10 +156,19 @@ async def on_guild_join(guild):
         )
     }
     await get_verified_channel.edit(overwrites=overwrites_verified_channel)
-    status_code = await validate_server(guild)
+   
+    BACKEND_URL = env["DISCORD_BACKEND_URL"]
+    serverId = guild.id
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"{BACKEND_URL}/api/", params={"serverId": str(serverId)}) as response:
+            status_code = response.status
+
     if status_code != 400:
-        await get_verified_channel.send(f"""To gain full access to this Discord server, please enter '/verify' in the chat box to initiate the verification process. Rest assured, we do not retain any of your private information during this process. If you encounter any issue, please contact humanID at discord@human-id.org. Replies to this message do not reach humanID.
-                                    """)
+        if status_code == 200:
+            await get_verified_channel.send(f"""To gain full access to this Discord server, please enter '/verify' in the chat box to initiate the verification process. Rest assured, we do not retain any of your private information during this process. If you encounter any issue, please contact humanID at discord@human-id.org. Replies to this message do not reach humanID.""")
+        else:
+            await get_verified_channel.send("An error occurred while validating the server. Please try again later or contact humanID support.")
+            
     else:
         await get_verified_channel.send("""Your server credential is not yet registered with humanID.\nType \'/register YOUR_EMAIL\' to register if you are an administrator.""")
     await enable_verified_role_on_guild_join(guild)
