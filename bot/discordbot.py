@@ -159,9 +159,10 @@ async def on_guild_join(guild):
    
     BACKEND_URL = env["DISCORD_BACKEND_URL"]
     serverId = guild.id
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{BACKEND_URL}/api/", params={"serverId": str(serverId)}) as response:
-            status_code = response.status
+    response = requests.get(
+        BACKEND_URL + '/api/?serverId=' + str(serverId)
+    )
+    status_code = response.status_code
 
     if status_code != 400:
         if status_code == 200:
