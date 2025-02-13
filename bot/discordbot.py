@@ -100,9 +100,22 @@ async def on_member_join(member):
     # Ensure that member is apart of the guild
     get_verified_channel = await ensure_text_channel(member, None, "get-verified")
     server_name = member.guild.name
-    if get_verified_channel:
-        await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. Enjoy your time here!
+
+    BACKEND_URL = env["DISCORD_BACKEND_URL"]
+    serverId = member.guild.id
+    response = requests.get(
+        BACKEND_URL + '/api/?serverId=' + str(serverId)
+    )
+    status_code = response.status_code
+
+    if status_code != 400:
+        if status_code == 200:
+            await member.send(f"""Hey, {member.mention}! Welcome to {server_name}! We are thrilled to have you here. To get started, please head to the server and click on the {get_verified_channel.mention} channel. Then type '/verify' to invoke this bot to help complete the verification process.\nAfter that, you'll be all set to embark on your Discord journey. Enjoy your time here!
             """)
+        else:
+            await get_verified_channel.send("An error occurred while validating the server. Please try again later or contact humanID support.")
+    else:
+        await get_verified_channel.send("""Your server credential is not yet registered with humanID.\nType \'/register YOUR_EMAIL\' to register if you are an administrator.""")
 
 
 
